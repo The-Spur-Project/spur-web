@@ -18,7 +18,13 @@ import Admin from './views/Admin'
 function AppRoutes() {
   const { session, user, loading } = useAuth()
 
-  if (loading) return null
+  if (loading) return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 48, fontWeight: 800, color: 'var(--white)', margin: 0, letterSpacing: '-1px' }}>
+        spur<span style={{ color: 'var(--blue)' }}>.</span>
+      </h1>
+    </div>
+  )
 
   const isAuthed = localStorage.getItem('spur_authed') === 'true'
 
