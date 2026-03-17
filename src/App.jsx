@@ -10,6 +10,7 @@ import SpurChat from './views/SpurChat'
 import Friends from './views/Friends'
 import History from './views/History'
 import Privacy from './views/Privacy'
+import Terms from './views/Terms'
 
 function AppRoutes() {
   const { session, loading } = useAuth()
@@ -70,6 +71,7 @@ function AppRoutes() {
           }
         />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <NavBar />
