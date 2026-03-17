@@ -7,7 +7,7 @@ const TABS = [
   { path: '/history', label: 'History', Icon: Clock },
 ]
 
-const HIDDEN_PATHS = ['/', '/auth', '/privacy', '/terms']
+const HIDDEN_PATHS = ['/', '/auth', '/privacy', '/terms', '/about']
 
 export default function NavBar() {
   const location = useLocation()

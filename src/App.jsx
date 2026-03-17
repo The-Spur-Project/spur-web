@@ -11,6 +11,7 @@ import Friends from './views/Friends'
 import History from './views/History'
 import Privacy from './views/Privacy'
 import Terms from './views/Terms'
+import About from './views/About'
 
 function AppRoutes() {
   const { session, loading } = useAuth()
@@ -70,6 +71,7 @@ function AppRoutes() {
             </RequireAuth>
           }
         />
+        <Route path="/about" element={<About />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="*" element={<Navigate to="/" replace />} />

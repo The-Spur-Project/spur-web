@@ -14,11 +14,29 @@
   --glow: 0 0 0 3px rgba(59,111,232,0.35);
 }
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
   background: var(--bg);
   color: var(--white);
   font-family: 'Inter', sans-serif;
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* Prevent iOS input zoom — all inputs must be >= 16px */
+input, textarea, select {
+  font-size: 16px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Remove tap flash on mobile */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 #root {
