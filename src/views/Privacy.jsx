@@ -37,14 +37,14 @@ export default function Privacy() {
       <section style={sectionStyle}>
         <h2 style={h2Style}>Data deletion</h2>
         <p style={pStyle}>
-          To delete your account and all associated data, contact us at privacy@spur-app.dev.
+          To delete your account and all associated data, contact us at thespurproject@gmail.com.
         </p>
       </section>
 
       <section style={sectionStyle}>
         <h2 style={h2Style}>Contact</h2>
         <p style={pStyle}>
-          Questions? Email <a href="mailto:privacy@spur-app.dev" style={{ color: 'var(--blue-light)' }}>privacy@spur-app.dev</a>
+          Questions? Email <a href="mailto:thespurproject@gmail.com" style={{ color: 'var(--blue-light)' }}>thespurproject@gmail.com</a>
         </p>
       </section>
     </div>

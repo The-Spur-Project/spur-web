@@ -394,6 +394,12 @@ entrypoint = "./functions/send-spur/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-spur/*.html" ]
 
+[functions.send-broadcast]
+enabled = true
+verify_jwt = true
+import_map = "./functions/send-broadcast/deno.json"
+entrypoint = "./functions/send-broadcast/index.ts"
+
 [functions.twilio-webhook]
 enabled = true
 verify_jwt = false  # Twilio cannot send Supabase JWTs — auth handled by HMAC signature verification

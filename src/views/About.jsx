@@ -32,8 +32,8 @@ export default function About() {
         <h2 style={h2Style}>Contact</h2>
         <p style={pStyle}>
           Questions or feedback?{' '}
-          <a href="mailto:hello@spur-app.dev" style={{ color: 'var(--blue-light)' }}>
-            hello@spur-app.dev
+          <a href="mailto:thespurproject@gmail.com" style={{ color: 'var(--blue-light)' }}>
+            thespurproject@gmail.com
           </a>
         </p>
       </section>

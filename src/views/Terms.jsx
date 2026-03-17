@@ -30,7 +30,7 @@ export default function Terms() {
       <section style={sectionStyle}>
         <h2 style={h2Style}>Help</h2>
         <p style={pStyle}>
-          Reply <strong>HELP</strong> for help, or contact us at support@spur-app.dev.
+          Reply <strong>HELP</strong> for help, or contact us at thespurproject@gmail.com.
         </p>
       </section>
 
@@ -44,7 +44,7 @@ export default function Terms() {
       <section style={sectionStyle}>
         <h2 style={h2Style}>Contact</h2>
         <p style={pStyle}>
-          Email: <a href="mailto:support@spur-app.dev" style={{ color: 'var(--blue-light)' }}>support@spur-app.dev</a>
+          Email: <a href="mailto:thespurproject@gmail.com" style={{ color: 'var(--blue-light)' }}>thespurproject@gmail.com</a>
         </p>
       </section>
     </div>

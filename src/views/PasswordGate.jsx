@@ -85,12 +85,17 @@ export default function PasswordGate() {
 
       {/* Footer nav */}
       <div style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
         padding: '16px 24px',
         paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',
         display: 'flex',
         justifyContent: 'center',
         gap: 24,
         borderTop: '1px solid var(--border)',
+        background: 'var(--bg)',
       }}>
         {[
           { to: '/about', label: 'About' },
