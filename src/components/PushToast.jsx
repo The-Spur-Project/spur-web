@@ -3,10 +3,17 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
 export default function PushToast() {
-  const { session } = useAuth()
+  const { session, user } = useAuth()
   const [toast, setToast] = useState(null)
   const channelRef = useRef(null)
+  const spurChannelRef = useRef(null)
   const timerRef = useRef(null)
+
+  function showToast(message) {
+    setToast(message)
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setToast(null), 4000)
+  }
 
   useEffect(() => {
     if (!session) return
@@ -14,9 +21,7 @@ export default function PushToast() {
     channelRef.current = supabase
       .channel('global-push')
       .on('broadcast', { event: 'push' }, ({ payload }) => {
-        setToast(payload.message)
-        clearTimeout(timerRef.current)
-        timerRef.current = setTimeout(() => setToast(null), 4000)
+        showToast(payload.message)
       })
       .subscribe()
 
@@ -25,6 +30,27 @@ export default function PushToast() {
       supabase.removeChannel(channelRef.current)
     }
   }, [session])
+
+  useEffect(() => {
+    if (!user) return
+
+    spurChannelRef.current = supabase
+      .channel('spur-toasts')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'spur_recipients' },
+        async (payload) => {
+          if (payload.new.recipient_id !== user.id) return
+          const { data: spur } = await supabase
+            .from('spurs')
+            .select('message, sender:users!sender_id(name)')
+            .eq('id', payload.new.spur_id)
+            .single()
+          if (spur) showToast(`${spur.sender.name} fired a spur: "${spur.message}"`)
+        }
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(spurChannelRef.current)
+  }, [user])
 
   if (!toast) return null
 

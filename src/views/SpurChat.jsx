@@ -145,19 +145,23 @@ export default function SpurChat() {
   }
 
   const isExpired = spur
-    ? new Date(spur.created_at).getTime() + 2 * 60 * 60 * 1000 < now
+    ? new Date(spur.created_at).getTime() + 3 * 60 * 60 * 1000 < now
     : false
 
   const isSender = spur?.sender_id === user?.id
 
-  if (access === 'loading') return null
+  if (access === 'loading') return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--blue)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+    </div>
+  )
 
   if (access === 'denied') {
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 }}>
         <p style={{ color: 'var(--muted)', fontSize: 16 }}>You weren't invited to this spur.</p>
-        <button onClick={() => navigate(-1)} style={{ background: 'var(--blue)', color: '#fff', border: 'none', borderRadius: 12, padding: '11px 24px', fontSize: 14, cursor: 'pointer' }}>
-          Go back
+        <button onClick={() => navigate('/home', { replace: true })} style={{ background: 'var(--blue)', color: '#fff', border: 'none', borderRadius: 12, padding: '11px 24px', fontSize: 14, cursor: 'pointer' }}>
+          Go home
         </button>
       </div>
     )
@@ -275,51 +279,65 @@ export default function SpurChat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div
-        style={{
-          padding: '10px 12px',
-          paddingBottom: 'calc(10px + env(safe-area-inset-bottom))',
+      {/* Input / Expired */}
+      {isExpired ? (
+        <div style={{
+          padding: '14px 16px',
+          paddingBottom: 'calc(14px + env(safe-area-inset-bottom))',
           borderTop: '1px solid var(--border)',
-          display: 'flex',
-          gap: 8,
           background: 'var(--surface)',
-        }}
-      >
-        <input
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-          placeholder="Message…"
+          textAlign: 'center',
+          fontSize: 13,
+          color: 'var(--muted)',
+        }}>
+          This spur has closed · chat locked after 3 hours
+        </div>
+      ) : (
+        <div
           style={{
-            flex: 1,
-            background: 'var(--surface-2)',
-            border: '1px solid var(--border)',
-            borderRadius: 12,
-            padding: '10px 14px',
-            color: 'var(--white)',
-            fontSize: 14,
-            outline: 'none',
-          }}
-        />
-        <button
-          onClick={sendMessage}
-          disabled={!inputText.trim()}
-          style={{
-            background: 'var(--blue)',
-            border: 'none',
-            borderRadius: 12,
-            padding: '0 14px',
-            cursor: inputText.trim() ? 'pointer' : 'not-allowed',
-            opacity: inputText.trim() ? 1 : 0.4,
-            color: '#fff',
+            padding: '10px 12px',
+            paddingBottom: 'calc(10px + env(safe-area-inset-bottom))',
+            borderTop: '1px solid var(--border)',
             display: 'flex',
-            alignItems: 'center',
+            gap: 8,
+            background: 'var(--surface)',
           }}
         >
-          <Send size={18} />
-        </button>
-      </div>
+          <input
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+            placeholder="Message…"
+            style={{
+              flex: 1,
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '10px 14px',
+              color: 'var(--white)',
+              fontSize: 14,
+              outline: 'none',
+            }}
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!inputText.trim()}
+            style={{
+              background: 'var(--blue)',
+              border: 'none',
+              borderRadius: 12,
+              padding: '0 14px',
+              cursor: inputText.trim() ? 'pointer' : 'not-allowed',
+              opacity: inputText.trim() ? 1 : 0.4,
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <Send size={18} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }

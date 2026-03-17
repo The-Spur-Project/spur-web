@@ -28,9 +28,11 @@ export default function Home() {
       .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
 
     if (!data) return
-    const list = data.map((f) =>
-      f.user_id === user.id ? f.friend : f.user
-    ).filter(Boolean)
+    const seen = new Set()
+    const list = data
+      .map((f) => (f.user_id === user.id ? f.friend : f.user))
+      .filter(Boolean)
+      .filter((f) => { if (seen.has(f.id)) return false; seen.add(f.id); return true })
     setFriends(list)
   }, [user.id])
 

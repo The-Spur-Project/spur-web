@@ -13,6 +13,7 @@ export default function Friends() {
   const [activeUsers, setActiveUsers] = useState([]) // users currently online
   const debounceRef = useRef(null)
   const presenceChannelRef = useRef(null)
+  const friendshipChannelRef = useRef(null)
 
   const loadFriends = useCallback(async () => {
     const { data } = await supabase
@@ -22,7 +23,11 @@ export default function Friends() {
       .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
 
     if (!data) return
-    const list = data.map((f) => (f.user_id === user.id ? f.friend : f.user)).filter(Boolean)
+    const seen = new Set()
+    const list = data
+      .map((f) => (f.user_id === user.id ? f.friend : f.user))
+      .filter(Boolean)
+      .filter((f) => { if (seen.has(f.id)) return false; seen.add(f.id); return true })
     setFriends(list)
     const map = {}
     list.forEach((f) => { map[f.id] = 'accepted' })
@@ -68,8 +73,21 @@ export default function Friends() {
         }
       })
 
+    friendshipChannelRef.current = supabase
+      .channel('friendship-changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'friendships' }, () => {
+        loadPending()
+        loadFriends()
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'friendships' }, () => {
+        loadPending()
+        loadFriends()
+      })
+      .subscribe()
+
     return () => {
       supabase.removeChannel(presenceChannelRef.current)
+      supabase.removeChannel(friendshipChannelRef.current)
     }
   }, [user, loadFriends, loadPending])
 
@@ -101,8 +119,8 @@ export default function Friends() {
 
     if (existing?.length) return
 
-    await supabase.from('friendships').insert({ user_id: user.id, friend_id: friendId, status: 'pending' })
-    setFriendshipMap((prev) => ({ ...prev, [friendId]: 'pending_sent' }))
+    const { error } = await supabase.from('friendships').insert({ user_id: user.id, friend_id: friendId, status: 'pending' })
+    if (!error) setFriendshipMap((prev) => ({ ...prev, [friendId]: 'pending_sent' }))
   }
 
   async function acceptFriend(friendId) {
@@ -207,10 +225,10 @@ export default function Friends() {
         )
       }
 
-      {activeUsers.length > 0 &&
+      {activeUsers.filter((u) => !friendshipMap[u.user_id]).length > 0 &&
         section(
-          `Active now (${activeUsers.length})`,
-          activeUsers.map((u) => (
+          `Active now (${activeUsers.filter((u) => !friendshipMap[u.user_id]).length})`,
+          activeUsers.filter((u) => !friendshipMap[u.user_id]).map((u) => (
             <FriendRow
               key={u.user_id}
               user={{ id: u.user_id, name: u.name }}
