@@ -16,7 +16,7 @@ import About from './views/About'
 import Admin from './views/Admin'
 
 function AppRoutes() {
-  const { session, loading } = useAuth()
+  const { session, user, loading } = useAuth()
 
   if (loading) return null
 
