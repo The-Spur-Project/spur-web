@@ -36,7 +36,7 @@ function AppRoutes() {
         <Route
           path="/auth"
           element={
-            session
+            session && user
               ? <Navigate to="/home" replace />
               : <Auth />
           }
