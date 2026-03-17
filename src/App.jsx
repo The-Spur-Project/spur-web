@@ -90,7 +90,7 @@ function AppRoutes() {
             </RequireAuth>
           }
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to={session && user ? '/home' : isAuthed ? '/auth' : '/'} replace />} />
       </Routes>
       <NavBar />
       <PushToast />
