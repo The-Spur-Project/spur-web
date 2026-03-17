@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 
 export default function PasswordGate() {
   const [password, setPassword] = useState('')
@@ -32,40 +32,15 @@ export default function PasswordGate() {
         }
       `}</style>
 
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 24,
-          gap: 32,
-        }}
-      >
-        <h1
-          style={{
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontSize: 48,
-            fontWeight: 800,
-            margin: 0,
-            color: 'var(--white)',
-            letterSpacing: '-1px',
-          }}
-        >
-          spur<span style={{ color: 'var(--blue)' }}>.</span>
-        </h1>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 32 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 52, fontWeight: 800, margin: 0, color: 'var(--white)', letterSpacing: '-1px' }}>
+            spur<span style={{ color: 'var(--blue)' }}>.</span>
+          </h1>
+          <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)' }}>spontaneous meetups for college</p>
+        </div>
 
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-            width: '100%',
-            maxWidth: 320,
-          }}
-        >
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 320 }}>
           <input
             type="password"
             placeholder="Beta password"
@@ -75,18 +50,18 @@ export default function PasswordGate() {
             style={{
               background: 'var(--surface)',
               border: `1.5px solid ${error ? '#ef4444' : 'var(--border)'}`,
-              borderRadius: 12,
-              padding: '13px 16px',
+              borderRadius: 14,
+              padding: '15px 16px',
               color: 'var(--white)',
-              fontSize: 15,
+              fontSize: 16,
               outline: 'none',
+              width: '100%',
+              boxSizing: 'border-box',
               animation: shaking ? 'shake 0.5s ease' : 'none',
             }}
           />
           {error && (
-            <span style={{ fontSize: 13, color: '#ef4444', marginTop: -4 }}>
-              Incorrect password
-            </span>
+            <span style={{ fontSize: 13, color: '#ef4444', marginTop: -4 }}>Incorrect password</span>
           )}
           <button
             type="submit"
@@ -94,16 +69,42 @@ export default function PasswordGate() {
               background: 'var(--blue)',
               color: '#fff',
               border: 'none',
-              borderRadius: 12,
-              padding: '13px 0',
-              fontSize: 15,
+              borderRadius: 14,
+              padding: '15px 0',
+              fontSize: 16,
               fontWeight: 600,
               cursor: 'pointer',
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
             }}
           >
             Enter
           </button>
         </form>
+      </div>
+
+      {/* Footer nav */}
+      <div style={{
+        padding: '16px 24px',
+        paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',
+        display: 'flex',
+        justifyContent: 'center',
+        gap: 24,
+        borderTop: '1px solid var(--border)',
+      }}>
+        {[
+          { to: '/about', label: 'About' },
+          { to: '/privacy', label: 'Privacy' },
+          { to: '/terms', label: 'Terms' },
+        ].map(({ to, label }) => (
+          <Link
+            key={to}
+            to={to}
+            style={{ color: 'var(--muted)', fontSize: 13, textDecoration: 'none' }}
+          >
+            {label}
+          </Link>
+        ))}
       </div>
     </>
   )
