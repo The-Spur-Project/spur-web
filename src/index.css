@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #08090A;
+  --surface: #111318;
+  --surface-2: #1C2030;
+  --border: #2A2F45;
+  --blue: #3B6FE8;
+  --blue-light: #7BAAF7;
+  --blue-pale: #C8DCFF;
+  --white: #F4F7FF;
+  --muted: #5B6380;
+  --black: #000000;
+  --glow: 0 0 0 3px rgba(59,111,232,0.35);
+}
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+}
+
+#root {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
