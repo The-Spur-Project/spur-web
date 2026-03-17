@@ -18,12 +18,19 @@ export default function Auth() {
     e.preventDefault()
     if (phone.length !== 10) { setError('Enter a 10-digit US number'); return }
     setLoading(true); setError('')
+    const fullPhone = '+1' + phone
+    console.log('[Auth] sendCode → signInWithOtp for', fullPhone)
     const { error: err } = await supabase.auth.signInWithOtp({
-      phone: '+1' + phone,
+      phone: fullPhone,
       options: { channel: 'sms' },
     })
     setLoading(false)
-    if (err) { setError(err.message); return }
+    if (err) {
+      console.error('[Auth] sendCode error:', err.message, err)
+      setError(err.message)
+      return
+    }
+    console.log('[Auth] sendCode success → moving to OTP phase')
     setPhase('otp')
   }
 
@@ -31,14 +38,17 @@ export default function Auth() {
     const token = (overrideDigits ?? digits).join('')
     if (token.length < 6) return
     setLoading(true); setError('')
+    const fullPhone = '+1' + phone
+    console.log('[Auth] verifyCode → verifyOtp for', fullPhone, 'token:', token)
 
     const { data, error: err } = await supabase.auth.verifyOtp({
-      phone: '+1' + phone,
+      phone: fullPhone,
       token,
       type: 'sms',
     })
 
     if (err) {
+      console.error('[Auth] verifyOtp error:', err.message, err)
       setLoading(false)
       setError(err.message)
       setDigits(['', '', '', '', '', ''])
@@ -46,13 +56,16 @@ export default function Auth() {
       return
     }
 
+    console.log('[Auth] verifyOtp success, session uid:', data?.session?.user?.id)
     const session = data?.session
     if (!session) {
+      console.error('[Auth] verifyOtp returned no session')
       setLoading(false)
       setError('Verification succeeded but no session returned — try again.')
       return
     }
 
+    console.log('[Auth] checking for existing public.users row for auth_uid:', session.user.id)
     const { data: existingUser, error: userErr } = await supabase
       .from('users')
       .select('*')
@@ -61,15 +74,21 @@ export default function Auth() {
 
     setLoading(false)
 
+    if (userErr) {
+      console.log('[Auth] users lookup error:', userErr.code, userErr.message)
+    }
+
     if (userErr && userErr.code !== 'PGRST116') {
       setError('Account lookup failed: ' + userErr.message)
       return
     }
 
     if (existingUser) {
+      console.log('[Auth] existing user found, navigating to /home:', existingUser.name)
       setUser(existingUser)
       navigate('/home')
     } else {
+      console.log('[Auth] no user profile found → moving to name registration phase')
       setPhase('name')
     }
   }
@@ -93,13 +112,19 @@ export default function Auth() {
     setLoading(true); setError('')
     const { data: sessionData } = await supabase.auth.getSession()
     const uid = sessionData.session?.user?.id
+    console.log('[Auth] registerName → inserting user, uid:', uid, 'name:', name.trim(), 'phone:', '+1' + phone)
     const { data: newUser, error: err } = await supabase
       .from('users')
       .insert({ auth_uid: uid, name: name.trim(), phone: '+1' + phone })
       .select()
       .single()
     setLoading(false)
-    if (err) { setError(err.message); return }
+    if (err) {
+      console.error('[Auth] registerName insert error:', err.message, err)
+      setError(err.message)
+      return
+    }
+    console.log('[Auth] registerName success:', newUser)
     setUser(newUser)
     navigate('/home')
   }
