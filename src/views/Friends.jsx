@@ -10,7 +10,9 @@ export default function Friends() {
   const [friends, setFriends] = useState([])
   const [pending, setPending] = useState([]) // incoming
   const [friendshipMap, setFriendshipMap] = useState({}) // userId → status
+  const [activeUsers, setActiveUsers] = useState([]) // users currently online
   const debounceRef = useRef(null)
+  const presenceChannelRef = useRef(null)
 
   const loadFriends = useCallback(async () => {
     const { data } = await supabase
@@ -47,6 +49,28 @@ export default function Friends() {
     if (!user) return
     loadFriends()
     loadPending()
+
+    // Track presence so others can see this user is online
+    presenceChannelRef.current = supabase
+      .channel('app-presence', { config: { presence: { key: user.id } } })
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannelRef.current.presenceState()
+        const online = Object.entries(state)
+          .flatMap(([, instances]) => instances)
+          .filter((p) => p.user_id !== user.id)
+          // deduplicate by user_id
+          .filter((p, i, arr) => arr.findIndex((x) => x.user_id === p.user_id) === i)
+        setActiveUsers(online)
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannelRef.current.track({ user_id: user.id, name: user.name })
+        }
+      })
+
+    return () => {
+      supabase.removeChannel(presenceChannelRef.current)
+    }
   }, [user, loadFriends, loadPending])
 
   useEffect(() => {
@@ -178,6 +202,20 @@ export default function Friends() {
               friendshipStatus="pending_received"
               onAccept={acceptFriend}
               onIgnore={ignoreFriend}
+            />
+          ))
+        )
+      }
+
+      {activeUsers.length > 0 &&
+        section(
+          `Active now (${activeUsers.length})`,
+          activeUsers.map((u) => (
+            <FriendRow
+              key={u.user_id}
+              user={{ id: u.user_id, name: u.name }}
+              friendshipStatus={friendshipMap[u.user_id] ?? null}
+              onAdd={addFriend}
             />
           ))
         )

@@ -69,7 +69,7 @@ export default function Admin() {
             transition: 'background 0.2s',
           }}
         >
-          {status === 'sending' ? 'Sending...' : status === 'ok' ? 'Sent!' : status === 'err' ? 'Error — try again' : 'Send to everyone online'}
+          {status === 'sending' ? 'Sending...' : status === 'ok' ? 'Sent!' : status === 'err' ? 'Error — try again' : 'Broadcast to all online users'}
         </button>
       </form>
     </div>
