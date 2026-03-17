@@ -1,5 +1,4 @@
 import { formatDistanceToNow } from 'date-fns'
-import TypePill from './TypePill'
 
 const STATUS_COLOR = {
   pending: 'var(--muted)',
@@ -34,18 +33,15 @@ export default function SpurCard({ spur, currentUserId, onClick }) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <TypePill type={spur.type} active small />
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)' }}>
+          {spur.sender_id === currentUserId ? 'You' : senderName}
+        </span>
         <span style={{ fontSize: 12, color: 'var(--muted)' }}>{timeAgo}</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--white)' }}>
-          {spur.sender_id === currentUserId ? 'You' : senderName}
-        </span>
-        {spur.note && (
-          <span style={{ fontSize: 13, color: 'var(--muted)' }}>{spur.note}</span>
-        )}
-      </div>
+      <span style={{ fontSize: 15, color: 'var(--white)', lineHeight: 1.4 }}>
+        {spur.message ?? spur.note ?? '—'}
+      </span>
 
       {recipients.length > 0 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

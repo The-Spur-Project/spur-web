@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import AvatarCircle from '../components/AvatarCircle'
 import MessageBubble from '../components/MessageBubble'
-import TypePill from '../components/TypePill'
 import { ArrowLeft, Send } from 'lucide-react'
 
 export default function SpurChat() {
@@ -183,17 +182,14 @@ export default function SpurChat() {
         >
           <ArrowLeft size={20} />
         </button>
-        <div style={{ flex: 1 }}>
-          {spur && <TypePill type={spur.type} active small />}
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {spur?.message ?? spur?.note ?? ''}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
             from {spur?.sender?.name}
           </div>
         </div>
-        {spur?.note && (
-          <span style={{ fontSize: 12, color: 'var(--muted)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {spur.note}
-          </span>
-        )}
       </div>
 
       {/* Recipients */}

@@ -2,19 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import TypePill from '../components/TypePill'
 import FriendRow from '../components/FriendRow'
 import SpurCard from '../components/SpurCard'
-
-const SPUR_TYPES = ['hangout', 'food', 'store_run', 'library']
 
 export default function Home() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
   // Fire a spur state
-  const [selectedType, setSelectedType] = useState(null)
-  const [note, setNote] = useState('')
+  const [message, setMessage] = useState('')
   const [friends, setFriends] = useState([])
   const [selectedFriends, setSelectedFriends] = useState([])
   const [sending, setSending] = useState(false)
@@ -104,12 +100,12 @@ export default function Home() {
   }
 
   async function sendSpur() {
-    if (!selectedType || selectedFriends.length === 0) return
+    if (!message.trim() || selectedFriends.length === 0) return
     setSending(true)
 
     const { data: spur, error } = await supabase
       .from('spurs')
-      .insert({ sender_id: user.id, type: selectedType, note: note.trim() || null })
+      .insert({ sender_id: user.id, message: message.trim() })
       .select()
       .single()
 
@@ -121,21 +117,19 @@ export default function Home() {
     }))
     await supabase.from('spur_recipients').insert(recipientRows)
 
-    // Call edge function to send SMS
     await supabase.functions.invoke('send-spur', { body: { spur_id: spur.id } })
 
     setSending(false)
     setSendSuccess(true)
     setTimeout(() => {
       setSendSuccess(false)
-      setSelectedType(null)
-      setNote('')
+      setMessage('')
       setSelectedFriends([])
       navigate(`/spur/${spur.id}`)
     }, 800)
   }
 
-  const canSend = selectedType && selectedFriends.length > 0 && !sending
+  const canSend = message.trim() && selectedFriends.length > 0 && !sending
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingBottom: 80 }}>
@@ -171,34 +165,24 @@ export default function Home() {
           Fire a Spur
         </p>
 
-        {/* Type selector */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {SPUR_TYPES.map((t) => (
-            <TypePill
-              key={t}
-              type={t}
-              active={selectedType === t}
-              onClick={() => setSelectedType(t === selectedType ? null : t)}
-            />
-          ))}
-        </div>
-
-        {/* Note */}
-        <textarea
-          placeholder="Add a note… (optional)"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          rows={2}
+        {/* Message */}
+        <input
+          type="text"
+          placeholder="Target run at Hemphill in 30?"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && canSend && sendSpur()}
           style={{
             background: 'var(--surface-2)',
             border: '1px solid var(--border)',
             borderRadius: 10,
-            padding: '10px 12px',
+            padding: '12px 14px',
             color: 'var(--white)',
-            fontSize: 14,
+            fontSize: 15,
             outline: 'none',
-            resize: 'none',
             fontFamily: 'inherit',
+            width: '100%',
+            boxSizing: 'border-box',
           }}
         />
 
