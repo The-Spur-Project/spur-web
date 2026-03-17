@@ -109,23 +109,30 @@ export default function App() {
       async (_event, newSession) => {
         console.log('[App] onAuthStateChange event:', _event, 'session:', newSession ? `uid=${newSession.user.id}` : null)
         setSession(newSession)
-        if (newSession) {
-          console.log('[App] session exists, fetching public.users for auth_uid:', newSession.user.id)
-          const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('auth_uid', newSession.user.id)
-            .single()
-          if (error) {
-            console.warn('[App] public.users fetch error:', error.code, error.message)
+        try {
+          if (newSession) {
+            console.log('[App] session exists, fetching public.users for auth_uid:', newSession.user.id)
+            const { data, error } = await supabase
+              .from('users')
+              .select('*')
+              .eq('auth_uid', newSession.user.id)
+              .single()
+            if (error) {
+              console.warn('[App] public.users fetch error:', error.code, error.message)
+            }
+            console.log('[App] public.users result:', data ?? 'null (no profile row yet)')
+            setUser(data ?? null)
+          } else {
+            console.log('[App] no session, clearing user')
+            setUser(null)
           }
-          console.log('[App] public.users result:', data ?? 'null (no profile row yet)')
-          setUser(data ?? null)
-        } else {
-          console.log('[App] no session, clearing user')
+        } catch (err) {
+          console.error('[App] unexpected error in auth handler:', err)
           setUser(null)
+        } finally {
+          console.log('[App] setLoading(false)')
+          setLoading(false)
         }
-        setLoading(false)
       }
     )
     return () => subscription.unsubscribe()
