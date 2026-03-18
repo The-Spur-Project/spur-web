@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { cn } from '../lib/cn'
 
 export default function Auth() {
   const [searchParams] = useSearchParams()
@@ -36,15 +37,11 @@ export default function Auth() {
     setPhase('otp')
   }
 
-  // After OTP verify, App.jsx's onAuthStateChange resolves authStatus.
-  // This effect navigates/transitions when that resolution arrives.
   /* eslint-disable react-hooks/set-state-in-effect -- intentional: reacting to external authStatus from App.jsx */
   useEffect(() => {
-    // Existing session + no profile: skip phone/OTP entirely, go straight to name
     if (authStatus === 'needs-profile' && phase === 'phone') {
       setPhase('name')
     }
-    // Existing session + profile found: go straight to destination
     if (authStatus === 'ready' && phase === 'phone') {
       navigate(dest, { replace: true })
     }
@@ -86,7 +83,6 @@ export default function Auth() {
       setError('Verification succeeded but no session returned — try again.')
       return
     }
-    // loading stays true — useEffect above handles navigation when authStatus resolves
   }
 
   async function resendCode() {
@@ -127,7 +123,6 @@ export default function Auth() {
   }
 
   function handleDigit(i, val) {
-    // Handle paste of full code into any box
     if (val.length > 1) {
       const pasted = val.replace(/\D/g, '').slice(0, 6)
       if (pasted.length === 6) {
@@ -154,68 +149,34 @@ export default function Auth() {
     }
   }
 
-  const containerStyle = {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 28,
-  }
+  const inputClass =
+    'w-full rounded-xl border-[1.5px] border-(--border) bg-(--surface) px-4 py-[13px] text-[15px] text-(--white) outline-none'
 
-  const inputStyle = {
-    background: 'var(--surface)',
-    border: '1.5px solid var(--border)',
-    borderRadius: 12,
-    padding: '13px 16px',
-    color: 'var(--white)',
-    fontSize: 15,
-    outline: 'none',
-    width: '100%',
-  }
-
-  const submitBtn = {
-    background: 'var(--blue)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 12,
-    padding: '13px 0',
-    fontSize: 15,
-    fontWeight: 600,
-    cursor: 'pointer',
-    width: '100%',
-    opacity: loading ? 0.6 : 1,
-  }
+  const submitClass = cn(
+    'w-full cursor-pointer rounded-xl border-none bg-(--blue) py-[13px] text-[15px] font-semibold text-white',
+    loading && 'cursor-not-allowed opacity-60',
+  )
 
   const logo = (
-    <h1
-      style={{
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
-        fontSize: 40,
-        fontWeight: 800,
-        margin: 0,
-        color: 'var(--white)',
-      }}
-    >
-      spur<span style={{ color: 'var(--blue)' }}>.</span>
+    <h1 className="m-0 font-['Plus_Jakarta_Sans',sans-serif] text-[40px] font-extrabold text-(--white)">
+      spur<span className="text-(--blue)">.</span>
     </h1>
   )
 
   if (phase === 'phone') {
     return (
-      <div style={containerStyle}>
+      <div className="flex flex-1 flex-col items-center justify-center gap-7 px-6 py-6">
         {logo}
-        <form onSubmit={sendCode} style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 320 }}>
-          <p style={{ margin: 0, color: 'var(--muted)', fontSize: 14, textAlign: 'center' }}>
+        <form onSubmit={sendCode} className="flex w-full max-w-[320px] flex-col gap-3">
+          <p className="m-0 text-center text-[14px] text-(--muted)">
             Enter your US phone number to get started
           </p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <span style={{ ...inputStyle, width: 'auto', padding: '13px 14px', flexShrink: 0, color: 'var(--muted)' }}>
+          <div className="flex gap-2">
+            <span className={cn(inputClass, 'w-auto shrink-0 px-[14px] text-(--muted)')}>
               +1
             </span>
             <input
-              style={inputStyle}
+              className={inputClass}
               type="tel"
               inputMode="numeric"
               maxLength={10}
@@ -225,8 +186,8 @@ export default function Auth() {
               autoFocus
             />
           </div>
-          {error && <span style={{ color: '#ef4444', fontSize: 13 }}>{error}</span>}
-          <button type="submit" style={submitBtn} disabled={loading}>
+          {error && <span className="text-[13px] text-[#ef4444]">{error}</span>}
+          <button type="submit" className={submitClass} disabled={loading}>
             {loading ? 'Sending…' : 'Send code'}
           </button>
         </form>
@@ -236,71 +197,66 @@ export default function Auth() {
 
   if (phase === 'otp') {
     return (
-      <div style={containerStyle}>
+      <div className="flex flex-1 flex-col items-center justify-center gap-7 px-6 py-6">
         {logo}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 320, alignItems: 'center' }}>
-          <p style={{ margin: 0, color: 'var(--muted)', fontSize: 14, textAlign: 'center' }}>
+        <div className="flex w-full max-w-[320px] flex-col items-center gap-4">
+          <p className="m-0 text-center text-[14px] text-(--muted)">
             Enter the 6-digit code sent to<br />
-            <span style={{ color: 'var(--white)', fontWeight: 500 }}>+1 {phone}</span>
+            <span className="font-medium text-(--white)">+1 {phone}</span>
           </p>
 
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="flex gap-2">
             {digits.map((d, i) => (
               <input
                 key={i}
-                ref={(el) => (digitRefs.current[i] = el)}
+                ref={(el) => { digitRefs.current[i] = el }}
                 type="text"
                 inputMode="numeric"
                 maxLength={6}
                 value={d}
                 onChange={(e) => handleDigit(i, e.target.value)}
                 onKeyDown={(e) => handleDigitKey(i, e)}
-                style={{
-                  width: 44,
-                  height: 52,
-                  textAlign: 'center',
-                  fontSize: 22,
-                  fontWeight: 700,
-                  background: 'var(--surface)',
-                  border: `1.5px solid ${error ? '#ef4444' : 'var(--border)'}`,
-                  borderRadius: 10,
-                  color: 'var(--white)',
-                  outline: 'none',
-                }}
+                className={cn(
+                  'h-[52px] w-11 rounded-[10px] bg-(--surface) text-center text-[22px] font-bold text-(--white) outline-none',
+                  error ? 'border-[1.5px] border-[#ef4444]' : 'border-[1.5px] border-(--border)',
+                )}
                 autoFocus={i === 0}
               />
             ))}
           </div>
 
           {error && (
-            <div style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 10, padding: '10px 14px', width: '100%', boxSizing: 'border-box' }}>
-              <span style={{ color: '#f87171', fontSize: 13 }}>{error}</span>
+            <div className="box-border w-full rounded-[10px] border border-[rgba(239,68,68,0.4)] bg-[rgba(239,68,68,0.12)] px-[14px] py-[10px]">
+              <span className="text-[13px] text-[#f87171]">{error}</span>
             </div>
           )}
 
           {loading && (
-            <span style={{ color: 'var(--muted)', fontSize: 13 }}>Verifying…</span>
+            <span className="text-[13px] text-(--muted)">Verifying…</span>
           )}
 
           <button
-            style={{ ...submitBtn, maxWidth: 320 }}
+            type="button"
+            className={cn(submitClass, 'max-w-[320px]')}
             onClick={() => verifyCode()}
-            disabled={loading || digits.some((d) => !d)}
+            disabled={loading || digits.some((x) => !x)}
           >
             Verify
           </button>
 
-          <div style={{ display: 'flex', gap: 20 }}>
+          <div className="flex gap-5">
             <button
-              onClick={() => { setPhase('phone'); setError(''); setDigits(['','','','','','']) }}
-              style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 13, cursor: 'pointer', padding: 0 }}
+              type="button"
+              onClick={() => { setPhase('phone'); setError(''); setDigits(['', '', '', '', '', '']) }}
+              className="cursor-pointer border-none bg-transparent p-0 text-[13px] text-(--muted)"
             >
               ← Wrong number
             </button>
             <button
+              type="button"
               onClick={resendCode}
               disabled={loading}
-              style={{ background: 'none', border: 'none', color: 'var(--blue-light)', fontSize: 13, cursor: 'pointer', padding: 0 }}
+              className="cursor-pointer border-none bg-transparent p-0 text-[13px] text-(--blue-light) disabled:opacity-50"
             >
               Resend code
             </button>
@@ -311,22 +267,22 @@ export default function Auth() {
   }
 
   return (
-    <div style={containerStyle}>
+    <div className="flex flex-1 flex-col items-center justify-center gap-7 px-6 py-6">
       {logo}
-      <form onSubmit={registerName} style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 320 }}>
-        <p style={{ margin: 0, color: 'var(--muted)', fontSize: 14, textAlign: 'center' }}>
-          What's your name?
+      <form onSubmit={registerName} className="flex w-full max-w-[320px] flex-col gap-3">
+        <p className="m-0 text-center text-[14px] text-(--muted)">
+          What&apos;s your name?
         </p>
         <input
-          style={inputStyle}
+          className={inputClass}
           type="text"
           placeholder="Your name"
           value={name}
           onChange={(e) => { setName(e.target.value); setError('') }}
           autoFocus
         />
-        {error && <span style={{ color: '#ef4444', fontSize: 13 }}>{error}</span>}
-        <button type="submit" style={submitBtn} disabled={loading}>
+        {error && <span className="text-[13px] text-[#ef4444]">{error}</span>}
+        <button type="submit" className={submitClass} disabled={loading}>
           {loading ? 'Saving…' : "Let's go"}
         </button>
       </form>

@@ -27,25 +27,24 @@ Deno.serve(async (req) => {
     .select('recipient:users!recipient_id(phone, name)')
     .eq('spur_id', spur_id)
 
-  const typeEmojis: Record<string, string> = {
-    hangout: '👋',
-    food: '🍔',
-    store_run: '🛒',
-    library: '📚',
-  }
-
-  const emoji = typeEmojis[spur.type] ?? '🔥'
-  const noteText = spur.note ? `\n${spur.note}` : ''
-  const baseUrl = Deno.env.get('APP_BASE_URL')
+  const baseUrl = Deno.env.get('APP_BASE_URL') ?? 'https://spur.app'
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID')!
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN')!
   const messagingSid = Deno.env.get('TWILIO_MESSAGING_SERVICE_SID')!
 
   let sent = 0
-  for (const { recipient } of (recipients ?? [])) {
+  const errors: string[] = []
+
+  for (const row of (recipients ?? [])) {
+    const recipient = row.recipient
+    if (!recipient?.phone) {
+      errors.push(`Skipped recipient with no phone`)
+      continue
+    }
+
     const body =
-      `${spur.sender.name} just fired a Spur! 🔥\n` +
-      `${emoji} ${spur.type.replace('_', ' ')}${noteText}\n` +
+      `${spur.sender.name} fired a spur 🔥\n` +
+      `"${spur.message ?? spur.note ?? ''}"\n` +
       `Jump in: ${baseUrl}/spur/${spur_id}`
 
     const res = await fetch(
@@ -63,10 +62,16 @@ Deno.serve(async (req) => {
         }),
       }
     )
-    if (res.ok) sent++
+
+    if (res.ok) {
+      sent++
+    } else {
+      const errText = await res.text()
+      errors.push(`Failed to SMS ${recipient.name ?? recipient.phone}: ${res.status} ${errText}`)
+    }
   }
 
-  return new Response(JSON.stringify({ success: true, sent }), {
+  return new Response(JSON.stringify({ success: true, sent, errors }), {
     headers: { 'Content-Type': 'application/json' },
   })
 })

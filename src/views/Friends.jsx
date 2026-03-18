@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import AvatarCircle from '../components/AvatarCircle'
 import FriendRow from '../components/FriendRow'
 
 export default function Friends() {
@@ -8,9 +9,9 @@ export default function Friends() {
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [friends, setFriends] = useState([])
-  const [pending, setPending] = useState([]) // incoming
-  const [friendshipMap, setFriendshipMap] = useState({}) // userId → status
-  const [activeUsers, setActiveUsers] = useState([]) // users currently online
+  const [pending, setPending] = useState([])
+  const [friendshipMap, setFriendshipMap] = useState({})
+  const [activeUsers, setActiveUsers] = useState([])
   const debounceRef = useRef(null)
   const presenceChannelRef = useRef(null)
   const friendshipChannelRef = useRef(null)
@@ -55,7 +56,6 @@ export default function Friends() {
     loadFriends()
     loadPending()
 
-    // Track presence so others can see this user is online
     presenceChannelRef.current = supabase
       .channel('app-presence', { config: { presence: { key: user.id } } })
       .on('presence', { event: 'sync' }, () => {
@@ -63,7 +63,6 @@ export default function Friends() {
         const online = Object.entries(state)
           .flatMap(([, instances]) => instances)
           .filter((p) => p.user_id !== user.id)
-          // deduplicate by user_id
           .filter((p, i, arr) => arr.findIndex((x) => x.user_id === p.user_id) === i)
         setActiveUsers(online)
       })
@@ -110,7 +109,6 @@ export default function Friends() {
   }, [query, user.id])
 
   async function addFriend(friendId) {
-    // Check for existing
     const { data: existing } = await supabase
       .from('friendships')
       .select('id')
@@ -130,7 +128,6 @@ export default function Friends() {
       .eq('user_id', friendId)
       .eq('friend_id', user.id)
 
-    // Insert reverse for bidirectionality
     await supabase.from('friendships').upsert({
       user_id: user.id,
       friend_id: friendId,
@@ -153,50 +150,37 @@ export default function Friends() {
     setFriendshipMap((prev) => { const n = { ...prev }; delete n[friendId]; return n })
   }
 
-  const section = (title, content) => (
-    <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        {title}
-      </p>
-      {content}
-    </div>
-  )
+  const activeFriends = activeUsers.filter((u) => friendshipMap[u.user_id] === 'accepted')
+  const activeUserIds = new Set(activeUsers.map((u) => u.user_id))
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingBottom: 80 }}>
+    <div className="flex flex-1 flex-col pb-20">
       {/* Header */}
-      <div style={{ padding: '20px 16px 0' }}>
-        <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--white)' }}>
+      <div className="px-4 pt-5">
+        <h2 className="m-0 font-['Plus_Jakarta_Sans',sans-serif] text-2xl font-extrabold text-(--white)">
           Friends
         </h2>
       </div>
 
       {/* Search */}
-      <div style={{ padding: '14px 16px 0' }}>
+      <div className="px-4 pt-3.5">
         <input
           type="text"
           placeholder="Search by name or phone…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{
-            width: '100%',
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 12,
-            padding: '11px 14px',
-            color: 'var(--white)',
-            fontSize: 14,
-            outline: 'none',
-            boxSizing: 'border-box',
-          }}
+          className="box-border w-full rounded-xl border border-(--border) bg-(--surface) px-3.5 py-[11px] text-sm text-(--white) outline-none"
         />
       </div>
 
+      {/* Search results */}
       {query.trim() && (
-        section(
-          'Results',
-          searchResults.length === 0 ? (
-            <p style={{ fontSize: 14, color: 'var(--muted)' }}>No users found</p>
+        <div className="flex flex-col gap-1 px-4 pt-4">
+          <p className="m-0 mb-1.5 text-[13px] font-semibold tracking-[0.06em] text-(--muted) uppercase">
+            Results
+          </p>
+          {searchResults.length === 0 ? (
+            <p className="text-sm text-(--muted)">No users found</p>
           ) : (
             searchResults.map((u) => (
               <FriendRow
@@ -206,49 +190,89 @@ export default function Friends() {
                 onAdd={addFriend}
               />
             ))
-          )
-        )
+          )}
+        </div>
       )}
 
-      {pending.length > 0 &&
-        section(
-          'Pending requests',
-          pending.map((u) => (
-            <FriendRow
-              key={u.id}
-              user={u}
-              friendshipStatus="pending_received"
-              onAccept={acceptFriend}
-              onIgnore={ignoreFriend}
-            />
-          ))
-        )
-      }
+      {/* Pending requests — card style */}
+      {pending.length > 0 && (
+        <div className="px-4 pt-4">
+          <p className="m-0 mb-2.5 text-[13px] font-semibold tracking-[0.06em] text-(--muted) uppercase">
+            Pending ({pending.length})
+          </p>
+          <div className="flex flex-col gap-2">
+            {pending.map((u) => (
+              <div
+                key={u.id}
+                className="flex items-center gap-3 rounded-2xl border border-(--border) bg-(--surface-2) px-3.5 py-3"
+              >
+                <AvatarCircle name={u.name} userId={u.id} size="md" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold text-(--white)">{u.name}</div>
+                  <div className="text-xs text-(--muted)">wants to connect</div>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => acceptFriend(u.id)}
+                    className="cursor-pointer rounded-[10px] border-none bg-(--green) px-4 py-[9px] text-[13px] font-semibold text-white transition-transform active:scale-[0.95]"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => ignoreFriend(u.id)}
+                    className="cursor-pointer rounded-[10px] border border-(--border) bg-transparent px-3 py-[9px] text-[13px] text-(--muted) transition-transform active:scale-[0.95]"
+                  >
+                    Ignore
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-      {activeUsers.filter((u) => !friendshipMap[u.user_id]).length > 0 &&
-        section(
-          `Active now (${activeUsers.filter((u) => !friendshipMap[u.user_id]).length})`,
-          activeUsers.filter((u) => !friendshipMap[u.user_id]).map((u) => (
-            <FriendRow
-              key={u.user_id}
-              user={{ id: u.user_id, name: u.name }}
-              friendshipStatus={friendshipMap[u.user_id] ?? null}
-              onAdd={addFriend}
-            />
-          ))
-        )
-      }
+      {/* Active now — horizontal avatar strip */}
+      {activeFriends.length > 0 && (
+        <div className="px-4 pt-4">
+          <p className="m-0 mb-2.5 text-[13px] font-semibold tracking-[0.06em] text-(--muted) uppercase">
+            Active now ({activeFriends.length})
+          </p>
+          <div className="flex gap-4 overflow-x-auto pb-1">
+            {activeFriends.map((u) => (
+              <div key={u.user_id} className="flex shrink-0 flex-col items-center gap-[5px]">
+                <div className="relative">
+                  <AvatarCircle name={u.name ?? '?'} userId={u.user_id} size="lg" />
+                  <span className="animate-pulse-dot absolute right-0 bottom-0 h-[11px] w-[11px] rounded-full border-2 border-(--bg) bg-(--green)" />
+                </div>
+                <span className="max-w-[52px] overflow-hidden text-ellipsis whitespace-nowrap text-center text-[11px] text-(--muted)">
+                  {u.name?.split(' ')[0] ?? '?'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-      {section(
-        `Your friends (${friends.length})`,
-        friends.length === 0 ? (
-          <p style={{ fontSize: 14, color: 'var(--muted)' }}>No friends yet — search to add some!</p>
+      {/* Your friends — with online dot overlay */}
+      <div className="flex flex-col gap-1 px-4 pt-4">
+        <p className="m-0 mb-1.5 text-[13px] font-semibold tracking-[0.06em] text-(--muted) uppercase">
+          Your friends ({friends.length})
+        </p>
+        {friends.length === 0 ? (
+          <p className="text-sm text-(--muted)">No friends yet — search to add some!</p>
         ) : (
           friends.map((f) => (
-            <FriendRow key={f.id} user={f} friendshipStatus="accepted" />
+            <div key={f.id} className="relative">
+              <FriendRow user={f} friendshipStatus="accepted" />
+              {activeUserIds.has(f.id) && (
+                <span className="pointer-events-none absolute top-4 left-[46px] h-[10px] w-[10px] rounded-full border-2 border-(--bg) bg-(--green)" />
+              )}
+            </div>
           ))
-        )
-      )}
+        )}
+      </div>
     </div>
   )
 }

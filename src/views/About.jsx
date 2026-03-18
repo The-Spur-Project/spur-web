@@ -1,38 +1,44 @@
+import { cn } from '../lib/cn'
+
+const section = 'mb-8'
+const h2 = 'mb-[10px] text-base font-semibold text-(--white)'
+const p = 'm-0 text-[14px] leading-[1.6] text-(--muted)'
+
 export default function About() {
   return (
-    <div style={{ flex: 1, padding: '32px 24px 64px', maxWidth: 480, margin: '0 auto', color: 'var(--white)' }}>
-      <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8 }}>
+    <div className="mx-auto max-w-[480px] flex-1 px-6 pt-8 pb-16 text-(--white)">
+      <h1 className="mb-2 font-['Plus_Jakarta_Sans',sans-serif] text-[28px] font-extrabold">
         About Spur
       </h1>
-      <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 32 }}>Beta v0.1</p>
+      <p className="mb-8 text-[13px] text-(--muted)">Beta v0.1</p>
 
-      <section style={sectionStyle}>
-        <p style={{ ...pStyle, fontSize: 16, color: 'var(--white)', lineHeight: '1.7' }}>
-          Spur is a spontaneous meetup app for college students. Stop overthinking plans — just fire a spur and see who's down.
+      <section className={section}>
+        <p className={cn(p, 'text-base text-(--white) leading-[1.7]')}>
+          Spur is a spontaneous meetup app for college students. Stop overthinking plans — just fire a spur and see who&apos;s down.
         </p>
       </section>
 
-      <section style={sectionStyle}>
-        <h2 style={h2Style}>How it works</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <section className={section}>
+        <h2 className={h2}>How it works</h2>
+        <div className="flex flex-col gap-3">
           {[
             { emoji: '🔥', text: 'Pick a vibe — hangout, food, store run, or library' },
             { emoji: '📲', text: 'Select friends and fire the spur — they get a text instantly' },
             { emoji: '✅', text: 'They reply YES or NO, or open the link to chat' },
           ].map(({ emoji, text }) => (
-            <div key={text} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: 20 }}>{emoji}</span>
-              <p style={{ ...pStyle, margin: 0 }}>{text}</p>
+            <div key={text} className="flex items-start gap-3">
+              <span className="text-xl">{emoji}</span>
+              <p className={cn(p, 'm-0')}>{text}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section style={sectionStyle}>
-        <h2 style={h2Style}>Contact</h2>
-        <p style={pStyle}>
+      <section className={section}>
+        <h2 className={h2}>Contact</h2>
+        <p className={p}>
           Questions or feedback?{' '}
-          <a href="mailto:thespurproject@gmail.com" style={{ color: 'var(--blue-light)' }}>
+          <a href="mailto:thespurproject@gmail.com" className="text-(--blue-light)">
             thespurproject@gmail.com
           </a>
         </p>
@@ -40,7 +46,3 @@ export default function About() {
     </div>
   )
 }
-
-const sectionStyle = { marginBottom: 32 }
-const h2Style = { fontSize: 16, fontWeight: 600, marginBottom: 10, color: 'var(--white)' }
-const pStyle = { fontSize: 14, color: 'var(--muted)', lineHeight: '1.6', margin: 0 }

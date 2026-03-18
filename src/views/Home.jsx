@@ -2,21 +2,20 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import FriendRow from '../components/FriendRow'
+import { cn } from '../lib/cn'
+import FriendChip from '../components/FriendChip'
 import SpurCard from '../components/SpurCard'
 
 export default function Home() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
-  // Fire a spur state
   const [message, setMessage] = useState('')
   const [friends, setFriends] = useState([])
   const [selectedFriends, setSelectedFriends] = useState([])
   const [sending, setSending] = useState(false)
   const [sendSuccess, setSendSuccess] = useState(false)
 
-  // Active spurs state
   const [spurs, setSpurs] = useState([])
   const channelRef = useRef(null)
 
@@ -37,10 +36,9 @@ export default function Home() {
   }, [user.id])
 
   const fetchSpurs = useCallback(async () => {
-    // Spurs I sent OR I'm a recipient of
     const { data: sentSpurs } = await supabase
       .from('spurs')
-      .select('*, sender:users!sender_id(name), spur_recipients(id, status, recipient_id, recipient:users!recipient_id(name))')
+      .select('*, sender:users!sender_id(name), spur_recipients(id, status, archived, unread_count, recipient_id, recipient:users!recipient_id(name))')
       .eq('sender_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20)
@@ -55,7 +53,7 @@ export default function Home() {
       const spurIds = recipientRows.map((r) => r.spur_id)
       const { data } = await supabase
         .from('spurs')
-        .select('*, sender:users!sender_id(name), spur_recipients(id, status, recipient_id, recipient:users!recipient_id(name))')
+        .select('*, sender:users!sender_id(name), spur_recipients(id, status, archived, unread_count, recipient_id, recipient:users!recipient_id(name))')
         .in('id', spurIds)
         .order('created_at', { ascending: false })
         .limit(20)
@@ -65,7 +63,17 @@ export default function Home() {
     const all = [...(sentSpurs ?? []), ...receivedSpurs]
     const unique = Array.from(new Map(all.map((s) => [s.id, s])).values())
     unique.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    setSpurs(unique)
+
+    const now = Date.now()
+    const active = unique.filter((s) => {
+      const notExpired = new Date(s.created_at).getTime() + 3 * 60 * 60 * 1000 > now
+      if (!notExpired) return false
+      const isMeSender = s.sender_id === user.id
+      if (isMeSender) return !s.archived
+      const myRow = s.spur_recipients?.find((r) => r.recipient_id === user.id)
+      return !myRow?.archived && myRow?.status !== 'left'
+    })
+    setSpurs(active)
   }, [user.id])
 
   /* eslint-disable react-hooks/set-state-in-effect -- data fetch on mount; setState in async callbacks is expected */
@@ -74,12 +82,10 @@ export default function Home() {
     fetchFriends()
     fetchSpurs()
 
-    // Realtime: refresh spur cards when recipient status changes
     channelRef.current = supabase
-      .channel('home-recipients')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'spur_recipients' }, () => {
-        fetchSpurs()
-      })
+      .channel('home-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'spur_recipients' }, () => fetchSpurs())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'spurs' }, () => fetchSpurs())
       .subscribe()
 
     return () => {
@@ -118,7 +124,6 @@ export default function Home() {
       recipient_id: id,
     }))
     await supabase.from('spur_recipients').insert(recipientRows)
-
     await supabase.functions.invoke('send-spur', { body: { spur_id: spur.id } })
 
     setSending(false)
@@ -132,83 +137,61 @@ export default function Home() {
   }
 
   const canSend = message.trim() && selectedFriends.length > 0 && !sending
+  const allSelected = friends.length > 0 && selectedFriends.length === friends.length
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingBottom: 80 }}>
+    <div className="flex flex-1 flex-col pb-20">
       {/* Header */}
-      <div style={{ padding: '20px 20px 0' }}>
-        <h2
-          style={{
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontSize: 26,
-            fontWeight: 800,
-            margin: 0,
-            color: 'var(--white)',
-          }}
-        >
+      <div className="px-5 pt-5">
+        <h2 className="m-0 font-['Plus_Jakarta_Sans',sans-serif] text-[26px] font-extrabold text-(--white)">
           Hey {user?.name?.split(' ')[0]} 👋
         </h2>
       </div>
 
-      {/* Fire a spur section */}
-      <div
-        style={{
-          margin: '16px 16px 0',
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 20,
-          padding: 16,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 14,
-        }}
-      >
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Fire a Spur
+      {/* Fire a Spur card */}
+      <div className="mx-4 mt-4 flex flex-col gap-3.5 rounded-[20px] border border-(--border) bg-surface-gradient p-4">
+        <p className="m-0 text-[13px] font-semibold tracking-[0.06em] text-(--muted) uppercase">
+          Fire a Spur 🔥
         </p>
 
-        {/* Message */}
-        <input
-          type="text"
+        <textarea
           placeholder="Target run at Hemphill in 30?"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && canSend && sendSpur()}
-          style={{
-            background: 'var(--surface-2)',
-            border: '1px solid var(--border)',
-            borderRadius: 10,
-            padding: '12px 14px',
-            color: 'var(--white)',
-            fontSize: 15,
-            outline: 'none',
-            fontFamily: 'inherit',
-            width: '100%',
-            boxSizing: 'border-box',
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey && canSend) {
+              e.preventDefault()
+              sendSpur()
+            }
           }}
+          rows={2}
+          className="box-border w-full resize-none rounded-xl border border-(--border) bg-(--surface-2) px-3.5 py-3 text-[15px] leading-[1.45] text-(--white) outline-none"
         />
 
-        {/* Friend selector */}
+        {/* Friend avatar chip grid */}
         {friends.length > 0 && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 13, color: 'var(--muted)' }}>
-                {selectedFriends.length} selected
+            <div className="mb-2.5 flex items-center justify-between">
+              <span className="text-xs text-(--muted)">
+                {selectedFriends.length === 0
+                  ? 'Tap to select'
+                  : `${selectedFriends.length} of ${friends.length} selected`}
               </span>
               <button
+                type="button"
                 onClick={toggleAll}
-                style={{ background: 'none', border: 'none', color: 'var(--blue-light)', fontSize: 13, cursor: 'pointer', padding: 0 }}
+                className="cursor-pointer border-none bg-transparent p-0 text-xs font-medium text-(--blue-light)"
               >
-                {selectedFriends.length === friends.length ? 'Deselect all' : 'Select all'}
+                {allSelected ? 'Deselect all' : 'Select all'}
               </button>
             </div>
-            <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+            <div className="flex flex-wrap gap-x-3.5 gap-y-2.5">
               {friends.map((f) => (
-                <FriendRow
+                <FriendChip
                   key={f.id}
-                  user={f}
+                  friend={f}
                   selected={selectedFriends.includes(f.id)}
-                  onSelect={() => toggleFriend(f.id)}
+                  onToggle={toggleFriend}
                 />
               ))}
             </div>
@@ -216,39 +199,37 @@ export default function Home() {
         )}
 
         {friends.length === 0 && (
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--muted)', textAlign: 'center' }}>
+          <p className="m-0 text-center text-[13px] text-(--muted)">
             Add friends first to send a spur
           </p>
         )}
 
         <button
+          type="button"
           onClick={sendSpur}
           disabled={!canSend}
-          style={{
-            background: sendSuccess ? '#22c55e' : 'var(--blue)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 12,
-            padding: '13px 0',
-            fontSize: 15,
-            fontWeight: 600,
-            cursor: canSend ? 'pointer' : 'not-allowed',
-            opacity: canSend || sendSuccess ? 1 : 0.4,
-            transition: 'background 0.3s',
-          }}
+          className={cn(
+            'rounded-xl border-none py-[13px] text-[15px] font-semibold text-white transition-all duration-200',
+            sendSuccess
+              ? 'bg-(--green) shadow-green-soft'
+              : 'bg-(--blue) shadow-blue-soft',
+            canSend || sendSuccess
+              ? 'cursor-pointer opacity-100 active:scale-[0.98]'
+              : 'cursor-not-allowed opacity-40',
+          )}
         >
           {sendSuccess ? '✓ Sent!' : sending ? 'Sending…' : 'Send Spur 🔥'}
         </button>
       </div>
 
       {/* Active spurs */}
-      <div style={{ padding: '20px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <div className="flex flex-col gap-2.5 px-4 pt-5">
+        <p className="m-0 text-[13px] font-semibold tracking-[0.06em] text-(--muted) uppercase">
           Active Spurs
         </p>
         {spurs.length === 0 && (
-          <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', textAlign: 'center', paddingTop: 16 }}>
-            No active spurs yet
+          <p className="m-0 pt-4 text-center text-sm text-(--muted)">
+            No active spurs · fire one above!
           </p>
         )}
         {spurs.map((s) => (

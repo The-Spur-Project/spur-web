@@ -56,43 +56,17 @@ export default function PushToast() {
 
   return (
     <>
-      <style>{`
-        @keyframes slideDown {
-          from { transform: translateY(-100%); opacity: 0; }
-          to   { transform: translateY(0);     opacity: 1; }
-        }
-      `}</style>
       <div
         onClick={() => setToast(null)}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '100%',
-          maxWidth: 480,
-          zIndex: 999,
-          animation: 'slideDown 0.3s ease',
-          cursor: 'pointer',
-        }}
+        className="fixed left-1/2 top-0 z-999 w-full max-w-[480px] -translate-x-1/2 cursor-pointer animate-slideDown"
       >
-        <div style={{
-          margin: '12px 16px 0',
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 14,
-          padding: '14px 16px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 12,
-          boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
-        }}>
-          <span style={{ fontSize: 20 }}>📣</span>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>spur broadcast</p>
-            <p style={{ margin: 0, fontSize: 14, color: 'var(--white)', lineHeight: 1.4 }}>{toast}</p>
+        <div className="mt-3 ml-4 mr-4 flex items-start gap-3 rounded-[14px] border border-(--border) bg-(--surface) px-4 py-[14px] shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+          <span className="text-[20px]">📣</span>
+          <div className="flex-1">
+            <p className="mb-[2px] text-[12px] font-semibold text-(--muted)">spur broadcast</p>
+            <p className="m-0 text-[14px] leading-[1.4] text-(--white)">{toast}</p>
           </div>
-          <span style={{ fontSize: 16, color: 'var(--muted)', paddingTop: 1 }}>×</span>
+          <span className="pt-px text-[16px] text-(--muted)">×</span>
         </div>
       </div>
     </>

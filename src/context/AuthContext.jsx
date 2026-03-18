@@ -16,8 +16,8 @@ export function RequireAuth({ children }) {
   const location = useLocation()
 
   if (authStatus === 'initializing') return (
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--blue)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+    <div className="flex flex-1 items-center justify-center">
+      <div className="h-7 w-7 rounded-full border-[3px] border-(--border) border-t-(--blue) animate-spin" />
     </div>
   )
 
