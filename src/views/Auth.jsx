@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
 export default function Auth() {
-  const [phase, setPhase] = useState('phone')
+  const [searchParams] = useSearchParams()
+  const dest = searchParams.get('from') ? decodeURIComponent(searchParams.get('from')) : '/home'
+  const [phase, setPhase] = useState(searchParams.get('step') === 'name' ? 'name' : 'phone')
   const [phone, setPhone] = useState('')
   const [digits, setDigits] = useState(['', '', '', '', '', ''])
   const [name, setName] = useState('')
@@ -12,7 +14,7 @@ export default function Auth() {
   const [error, setError] = useState('')
   const digitRefs = useRef([])
   const navigate = useNavigate()
-  const { setUser } = useAuth()
+  const { setUser, setAuthStatus } = useAuth()
 
   async function sendCode(e) {
     e.preventDefault()
@@ -84,9 +86,10 @@ export default function Auth() {
     }
 
     if (existingUser) {
-      console.log('[Auth] existing user found, navigating to /home:', existingUser.name)
+      console.log('[Auth] existing user found, navigating to:', dest)
       setUser(existingUser)
-      navigate('/home')
+      setAuthStatus('ready')
+      navigate(dest, { replace: true })
     } else {
       console.log('[Auth] no user profile found → moving to name registration phase')
       setPhase('name')
@@ -126,7 +129,8 @@ export default function Auth() {
     }
     console.log('[Auth] registerName success:', newUser)
     setUser(newUser)
-    navigate('/home')
+    setAuthStatus('ready')
+    navigate(dest, { replace: true })
   }
 
   function handleDigit(i, val) {

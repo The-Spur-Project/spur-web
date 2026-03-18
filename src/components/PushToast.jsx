@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
 export default function PushToast() {
-  const { session, user } = useAuth()
+  const { authStatus, user } = useAuth()
   const [toast, setToast] = useState(null)
   const channelRef = useRef(null)
   const spurChannelRef = useRef(null)
@@ -16,7 +16,7 @@ export default function PushToast() {
   }
 
   useEffect(() => {
-    if (!session) return
+    if (authStatus !== 'ready') return
 
     channelRef.current = supabase
       .channel('global-push')
@@ -29,7 +29,7 @@ export default function PushToast() {
       clearTimeout(timerRef.current)
       supabase.removeChannel(channelRef.current)
     }
-  }, [session])
+  }, [authStatus])
 
   useEffect(() => {
     if (!user) return
