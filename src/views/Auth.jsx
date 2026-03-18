@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -14,7 +14,7 @@ export default function Auth() {
   const [error, setError] = useState('')
   const digitRefs = useRef([])
   const navigate = useNavigate()
-  const { setUser, setAuthStatus } = useAuth()
+  const { authStatus, setUser, setAuthStatus } = useAuth()
 
   async function sendCode(e) {
     e.preventDefault()
@@ -36,12 +36,25 @@ export default function Auth() {
     setPhase('otp')
   }
 
+  // After OTP verify, App.jsx's onAuthStateChange resolves authStatus.
+  // This effect navigates/transitions when that resolution arrives.
+  /* eslint-disable react-hooks/set-state-in-effect -- intentional: reacting to external authStatus from App.jsx */
+  useEffect(() => {
+    if (phase !== 'otp' || !loading) return
+    if (authStatus === 'ready') {
+      navigate(dest, { replace: true })
+    } else if (authStatus === 'needs-profile') {
+      setLoading(false)
+      setPhase('name')
+    }
+  }, [authStatus, phase, loading, navigate, dest])
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   async function verifyCode(overrideDigits) {
     const token = (overrideDigits ?? digits).join('')
     if (token.length < 6) return
     setLoading(true); setError('')
     const fullPhone = '+1' + phone
-    console.log('[Auth] verifyCode → verifyOtp for', fullPhone, 'token:', token)
 
     const { data, error: err } = await supabase.auth.verifyOtp({
       phone: fullPhone,
@@ -50,7 +63,6 @@ export default function Auth() {
     })
 
     if (err) {
-      console.error('[Auth] verifyOtp error:', err.message, err)
       setLoading(false)
       setError(err.message)
       setDigits(['', '', '', '', '', ''])
@@ -58,42 +70,12 @@ export default function Auth() {
       return
     }
 
-    console.log('[Auth] verifyOtp success, session uid:', data?.session?.user?.id)
-    const session = data?.session
-    if (!session) {
-      console.error('[Auth] verifyOtp returned no session')
+    if (!data?.session) {
       setLoading(false)
       setError('Verification succeeded but no session returned — try again.')
       return
     }
-
-    console.log('[Auth] checking for existing public.users row for auth_uid:', session.user.id)
-    const { data: existingUser, error: userErr } = await supabase
-      .from('users')
-      .select('*')
-      .eq('auth_uid', session.user.id)
-      .single()
-
-    setLoading(false)
-
-    if (userErr) {
-      console.log('[Auth] users lookup error:', userErr.code, userErr.message)
-    }
-
-    if (userErr && userErr.code !== 'PGRST116') {
-      setError('Account lookup failed: ' + userErr.message)
-      return
-    }
-
-    if (existingUser) {
-      console.log('[Auth] existing user found, navigating to:', dest)
-      setUser(existingUser)
-      setAuthStatus('ready')
-      navigate(dest, { replace: true })
-    } else {
-      console.log('[Auth] no user profile found → moving to name registration phase')
-      setPhase('name')
-    }
+    // loading stays true — useEffect above handles navigation when authStatus resolves
   }
 
   async function resendCode() {

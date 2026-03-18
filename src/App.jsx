@@ -72,39 +72,48 @@ export default function App() {
           return
         }
 
-        // Session exists — fetch profile with 3s timeout so we never hang forever
-        try {
-          const fetchProfile = supabase
-            .from('users')
-            .select('*')
-            .eq('auth_uid', newSession.user.id)
-            .single()
-          const timer = new Promise((resolve) =>
-            setTimeout(() => resolve({ data: null, error: { code: 'TIMEOUT' } }), 3000)
-          )
-          const { data, error } = await Promise.race([fetchProfile, timer])
+        // Session exists — fetch profile, retrying on transient lock conflicts
+        const fetchProfile = async (attempt = 0) => {
+          try {
+            const dbFetch = supabase
+              .from('users')
+              .select('*')
+              .eq('auth_uid', newSession.user.id)
+              .single()
+            const timer = new Promise((resolve) =>
+              setTimeout(() => resolve({ data: null, error: { code: 'TIMEOUT' } }), 3000)
+            )
+            const { data, error } = await Promise.race([dbFetch, timer])
 
-          if (error && error.code !== 'PGRST116' && error.code !== 'TIMEOUT') {
-            // Unexpected error — sign out so user isn't stuck in a broken state
-            console.warn('[App] profile fetch error:', error.code, error.message)
-            await supabase.auth.signOut()
-            setUser(null)
-            setAuthStatus('unauthed')
-            return
-          }
+            if (error?.name === 'AbortError' && attempt < 3) {
+              // Transient IndexedDB lock conflict — wait for locks to clear and retry
+              await new Promise((r) => setTimeout(r, 400))
+              return fetchProfile(attempt + 1)
+            }
 
-          if (data) {
-            setUser(data)
-            setAuthStatus('ready')
-          } else {
-            // No profile row (new user, post-wipe, or timeout) → name registration
+            if (error && error.code !== 'PGRST116' && error.code !== 'TIMEOUT') {
+              // Genuine unexpected error — leave as needs-profile so user can register
+              console.warn('[App] profile fetch error:', error.code, error.message)
+              setAuthStatus('needs-profile')
+              return
+            }
+
+            if (data) {
+              setUser(data)
+              setAuthStatus('ready')
+            } else {
+              setAuthStatus('needs-profile')
+            }
+          } catch (err) {
+            if (err.name === 'AbortError' && attempt < 3) {
+              await new Promise((r) => setTimeout(r, 400))
+              return fetchProfile(attempt + 1)
+            }
+            console.error('[App] profile fetch failed after retries:', err)
             setAuthStatus('needs-profile')
           }
-        } catch (err) {
-          console.error('[App] unexpected error in auth handler:', err)
-          setUser(null)
-          setAuthStatus('unauthed')
         }
+        fetchProfile()
       }
     )
     return () => subscription.unsubscribe()
