@@ -40,6 +40,17 @@ export default function Auth() {
   // This effect navigates/transitions when that resolution arrives.
   /* eslint-disable react-hooks/set-state-in-effect -- intentional: reacting to external authStatus from App.jsx */
   useEffect(() => {
+    // Existing session + no profile: skip phone/OTP entirely, go straight to name
+    if (authStatus === 'needs-profile' && phase === 'phone') {
+      setPhase('name')
+    }
+    // Existing session + profile found: go straight to destination
+    if (authStatus === 'ready' && phase === 'phone') {
+      navigate(dest, { replace: true })
+    }
+  }, [authStatus, phase, navigate, dest])
+
+  useEffect(() => {
     if (phase !== 'otp' || !loading) return
     if (authStatus === 'ready') {
       navigate(dest, { replace: true })
