@@ -54,6 +54,7 @@ export default function SpurChat() {
   const [access, setAccess] = useState('loading')
   const [now, setNow] = useState(() => Date.now())
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [changingRsvp, setChangingRsvp] = useState(false)
   const messagesEndRef = useRef(null)
   const channelRef = useRef(null)
 
@@ -186,14 +187,20 @@ export default function SpurChat() {
 
   const annotatedMessages = messages.map((m, i) => {
     const prev = i > 0 ? messages[i - 1] : null
-    const sameSender = prev?.sender_id === m.sender_id
-    const closeInTime = prev
+    const next = i < messages.length - 1 ? messages[i + 1] : null
+    const sameSenderAsPrev = prev?.sender_id === m.sender_id
+    const closeInTimePrev = prev
       ? new Date(m.created_at) - new Date(prev.created_at) < 3 * 60 * 1000
       : false
-    const showSender = !sameSender || !closeInTime
+    const showSender = !sameSenderAsPrev || !closeInTimePrev
     const showDateSep = !prev ||
       new Date(m.created_at).toDateString() !== new Date(prev.created_at).toDateString()
-    return { ...m, showSender, showDateSep }
+    const sameSenderAsNext = next?.sender_id === m.sender_id
+    const closeInTimeNext = next
+      ? new Date(next.created_at) - new Date(m.created_at) < 3 * 60 * 1000
+      : false
+    const showTime = !next || !sameSenderAsNext || !closeInTimeNext
+    return { ...m, showSender, showDateSep, showTime }
   })
 
   async function sendMessage() {
@@ -212,6 +219,7 @@ export default function SpurChat() {
     if (!myRow) return
     await supabase.from('spur_recipients').update({ status }).eq('id', myRow.id)
     setMyRsvp(status)
+    setChangingRsvp(false)
   }
 
   async function handleArchive() {
@@ -345,7 +353,7 @@ export default function SpurChat() {
                   <AvatarCircle name={r.recipient?.name ?? '?'} userId={r.recipient_id} size="sm" />
                   <span
                     className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full border-[1.5px] border-(--bg)"
-                    style={{ background: DOT_COLOR[r.status] ?? 'var(--muted)' }}
+                    style={{ background: DOT_COLOR[r.status] ?? '(--muted)' }}
                   />
                 </div>
                 <span className={recipientNameClass(r.status)}>
@@ -386,7 +394,7 @@ export default function SpurChat() {
       )}
 
       {/* RSVP buttons */}
-      {!isSender && myRsvp !== 'yes' && myRsvp !== 'no' && myRsvp !== 'left' && !isExpired && (
+      {!isSender && (myRsvp !== 'yes' && myRsvp !== 'no' && myRsvp !== 'left' || changingRsvp) && !isExpired && (
         <div className="flex gap-2.5 border-b border-(--border) px-4 py-2.5">
           <button
             type="button"
@@ -404,28 +412,32 @@ export default function SpurChat() {
           </button>
         </div>
       )}
-      {!isSender && (myRsvp === 'yes' || myRsvp === 'no') && (
-        <div
+      {!isSender && (myRsvp === 'yes' || myRsvp === 'no') && !changingRsvp && (
+        <button
+          type="button"
+          onClick={!isExpired ? () => setChangingRsvp(true) : undefined}
           className={cn(
-            'border-b border-(--border) px-4 py-2 text-center text-[13px]',
+            'w-full border-b border-(--border) px-4 py-2 text-center text-[13px]',
             myRsvp === 'yes' ? 'text-(--green)' : 'text-(--muted)',
+            !isExpired && 'cursor-pointer',
           )}
         >
           You said {myRsvp === 'yes' ? 'YES 🙌' : 'NO 👎'}
           {isExpired ? '' : ' · tap again to change'}
-        </div>
+        </button>
       )}
 
       {/* Messages */}
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-3">
         {annotatedMessages.map((m) => (
-          <div key={m.id}>
+          <div key={m.id} className="flex flex-col">
             {m.showDateSep && <DateSeparator date={m.created_at} />}
             <MessageBubble
               message={m}
               isOwn={m.sender_id === user.id}
               senderName={m.sender?.name ?? usersMap[m.sender_id]?.name ?? 'Someone'}
               showSender={m.showSender}
+              showTime={m.showTime}
               userId={m.sender_id}
             />
           </div>

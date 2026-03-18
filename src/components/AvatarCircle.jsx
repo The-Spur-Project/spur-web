@@ -9,10 +9,10 @@ function hashColor(userId) {
 }
 
 const SIZE_CLASSES = {
-  sm: 'h-7 w-7 text-[11px]',
+  sm: 'h-7 w-7 text-xs',
   md: 'h-9 w-9 text-sm',
   lg: 'h-12 w-12 text-lg',
-  xl: 'h-[60px] w-[60px] text-[22px]',
+  xl: 'h-15 w-15 text-2xl',
 }
 
 export default function AvatarCircle({ name = '?', userId = '', size = 'md' }) {

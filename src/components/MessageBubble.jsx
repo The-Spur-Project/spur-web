@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import { cn } from '../lib/cn'
 import AvatarCircle from './AvatarCircle'
 
-export default function MessageBubble({ message, isOwn, senderName, showSender = true, userId }) {
+export default function MessageBubble({ message, isOwn, senderName, showSender = true, showTime = true, userId }) {
   const timeStr = message.created_at
     ? format(new Date(message.created_at), 'h:mm a')
     : ''
@@ -12,15 +12,17 @@ export default function MessageBubble({ message, isOwn, senderName, showSender =
       <div
         className={cn(
           'flex max-w-[78%] flex-col items-end self-end',
-          showSender ? 'mb-2.5' : 'mb-[2px]',
+          showTime ? 'mb-2.5' : 'mb-[2px]',
         )}
       >
         <div className="max-w-full rounded-[18px_18px_4px_18px] bg-blue-bubble px-3.5 py-2.5 text-[15px] leading-[1.45] text-white shadow-blue-bubble wrap-break-word">
           {message.content}
         </div>
-        <span className="mr-[3px] mt-[3px] text-[10px] text-(--muted)">
-          {timeStr}
-        </span>
+        {showTime && (
+          <span className="mr-[3px] mt-[3px] text-[10px] text-(--muted)">
+            {timeStr}
+          </span>
+        )}
       </div>
     )
   }
@@ -29,7 +31,7 @@ export default function MessageBubble({ message, isOwn, senderName, showSender =
     <div
       className={cn(
         'flex max-w-[82%] items-end self-start gap-2',
-        showSender ? 'mb-2.5' : 'mb-[2px]',
+        showTime ? 'mb-2.5' : 'mb-[2px]',
       )}
     >
       {showSender
@@ -46,9 +48,11 @@ export default function MessageBubble({ message, isOwn, senderName, showSender =
         <div className="max-w-full rounded-[18px_18px_18px_4px] border border-(--border) bg-(--surface-2) px-3.5 py-2.5 text-[15px] leading-[1.45] text-(--white) wrap-break-word">
           {message.content}
         </div>
-        <span className="mt-[3px] ml-[2px] text-[10px] text-(--muted)">
-          {timeStr}
-        </span>
+        {showTime && (
+          <span className="mt-[3px] ml-[2px] text-[10px] text-(--muted)">
+            {timeStr}
+          </span>
+        )}
       </div>
     </div>
   )

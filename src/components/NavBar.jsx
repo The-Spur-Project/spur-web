@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Home, Users, Clock, LogOut } from 'lucide-react'
+import { Home, Users, Clock, LogOut, Sun, Moon } from 'lucide-react'
 import { cn } from '../lib/cn'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -18,6 +18,15 @@ export default function NavBar() {
   const navigate = useNavigate()
   const { setUser, setAuthStatus } = useAuth()
   const [confirmingLogout, setConfirmingLogout] = useState(false)
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('spur_theme')
+    return saved ? saved === 'dark' : true
+  })
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
+    localStorage.setItem('spur_theme', isDark ? 'dark' : 'light')
+  }, [isDark])
 
   const pathname = location.pathname
   const isHidden =
@@ -92,6 +101,14 @@ export default function NavBar() {
             </button>
           )
         })}
+        <button
+          type="button"
+          onClick={() => setIsDark((d) => !d)}
+          className="flex cursor-pointer flex-col items-center gap-[3px] border-none bg-transparent px-4 py-1 text-(--muted)"
+        >
+          {isDark ? <Sun size={22} strokeWidth={1.8} /> : <Moon size={22} strokeWidth={1.8} />}
+          <span className="text-[11px]">{isDark ? 'Light' : 'Dark'}</span>
+        </button>
         <button
           type="button"
           onClick={() => setConfirmingLogout(true)}

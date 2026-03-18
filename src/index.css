@@ -30,6 +30,20 @@
   --glow: 0 0 0 3px rgba(59, 111, 232, 0.35);
 }
 
+/* ─── Light theme ─────────────────────────────── */
+[data-theme="light"] {
+  --bg: #F0F2F7;
+  --surface: #FFFFFF;
+  --surface-2: #E6EAF2;
+
+  --border: #CDD3E3;
+  --border-unread: rgba(59, 111, 232, 0.25);
+
+  --white: #0D1117;
+  --muted: #7A82A0;
+}
+
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
