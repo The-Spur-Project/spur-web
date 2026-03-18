@@ -1,5 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Home, Users, Clock } from 'lucide-react'
+import { Home, Users, Clock, LogOut } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 const TABS = [
   { path: '/home', label: 'Home', Icon: Home },
@@ -12,12 +14,20 @@ const HIDDEN_PATHS = ['/', '/auth', '/privacy', '/terms', '/about']
 export default function NavBar() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { setUser, setAuthStatus } = useAuth()
 
   const pathname = location.pathname
   const isHidden =
     HIDDEN_PATHS.includes(pathname) || pathname.startsWith('/spur/')
 
   if (isHidden) return null
+
+  async function handleLogout() {
+    setUser(null)
+    setAuthStatus('unauthed')
+    navigate('/auth', { replace: true })
+    await supabase.auth.signOut()
+  }
 
   return (
     <nav
@@ -60,6 +70,23 @@ export default function NavBar() {
           </button>
         )
       })}
+      <button
+        onClick={handleLogout}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 3,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '4px 16px',
+          color: 'var(--muted)',
+        }}
+      >
+        <LogOut size={22} strokeWidth={1.8} />
+        <span style={{ fontSize: 11 }}>Log out</span>
+      </button>
     </nav>
   )
 }
