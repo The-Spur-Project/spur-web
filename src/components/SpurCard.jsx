@@ -69,7 +69,7 @@ export default function SpurCard({ spur, currentUserId, onClick }) {
           {recipients.map((r) => (
             <span
               key={r.id ?? r.recipient_id}
-              style={{ background: STATUS_COLOR[r.status] ?? '(--muted)' }}
+              style={{ background: STATUS_COLOR[r.status] ?? 'var(--muted)' }}
               className="inline-block h-[10px] w-[10px] rounded-full"
               title={r.recipient?.name ?? r.status}
             />
