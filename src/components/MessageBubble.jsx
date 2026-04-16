@@ -2,7 +2,15 @@ import { format } from 'date-fns'
 import { cn } from '../lib/cn'
 import AvatarCircle from './AvatarCircle'
 
-export default function MessageBubble({ message, isOwn, senderName, showSender = true, showTime = true, userId }) {
+export default function MessageBubble({ message, isOwn, senderName, showSender = true, showTime = true, userId, type = 'text' }) {
+  if (type === 'system') {
+    return (
+      <div className="animate-fadeUp my-2 text-center text-[11px] text-(--muted)">
+        {message.content}
+      </div>
+    )
+  }
+
   const timeStr = message.created_at
     ? format(new Date(message.created_at), 'h:mm a')
     : ''

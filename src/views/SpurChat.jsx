@@ -6,7 +6,8 @@ import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/cn'
 import AvatarCircle from '../components/AvatarCircle'
 import MessageBubble from '../components/MessageBubble'
-import { Archive, ArrowLeft, Send, Trash2 } from 'lucide-react'
+import PlusOneSheet from '../components/PlusOneSheet'
+import { Archive, ArrowLeft, Send, Trash2, UserPlus } from 'lucide-react'
 
 const DOT_COLOR = {
   yes: 'var(--green)',
@@ -55,6 +56,7 @@ export default function SpurChat() {
   const [now, setNow] = useState(() => Date.now())
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [changingRsvp, setChangingRsvp] = useState(false)
+  const [plusOneSheetOpen, setPlusOneSheetOpen] = useState(false)
   const messagesEndRef = useRef(null)
   const channelRef = useRef(null)
   const isMountedRef = useRef(true)
@@ -149,6 +151,14 @@ export default function SpurChat() {
       }, () => {
         refreshRecipients()
       })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'spurs',
+        filter: `id=eq.${id}`,
+      }, (payload) => {
+        setSpur((prev) => prev ? { ...prev, ...payload.new } : prev)
+      })
       .subscribe()
   }, [id, user, refreshRecipients])
 
@@ -183,6 +193,18 @@ export default function SpurChat() {
   const isLeft = myRecipientRow?.status === 'left'
   const isLocked = isExpired || myArchived || isLeft
 
+  const plusOneEnabled = spur?.plus_one_enabled ?? false
+  const isOriginalRecipient = myRecipientRow != null && myRecipientRow.invited_by_id == null
+  const myPlusOneCount = recipients.filter((r) => r.invited_by_id === user?.id).length
+  const canAddPlusOne = (
+    plusOneEnabled &&
+    isOriginalRecipient &&
+    myRsvp === 'yes' &&
+    !isExpired &&
+    !isLocked &&
+    myPlusOneCount < 2
+  )
+
   const usersMap = {}
   if (spur?.sender) usersMap[spur.sender_id] = spur.sender
   recipients.forEach((r) => { if (r.recipient) usersMap[r.recipient_id] = r.recipient })
@@ -211,6 +233,13 @@ export default function SpurChat() {
     const showTime = !next || !sameSenderAsNext || !closeInTimeNext
     return { ...m, showSender, showDateSep, showTime }
   })
+
+  const isGuest = myRecipientRow?.invited_by_id != null
+  const visibleMessages = isGuest
+    ? annotatedMessages.filter((m) =>
+        new Date(m.created_at) >= new Date(myRecipientRow.joined_at)
+      )
+    : annotatedMessages
 
   async function sendMessage() {
     const content = inputText.trim()
@@ -338,7 +367,24 @@ export default function SpurChat() {
               </button>
             </div>
           ) : (
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
+              {!isExpired && (
+                <button
+                  key={plusOneEnabled ? 'on' : 'off'}
+                  type="button"
+                  onClick={() =>
+                    supabase.from('spurs').update({ plus_one_enabled: !plusOneEnabled }).eq('id', id)
+                  }
+                  className={cn(
+                    'animate-pop cursor-pointer rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                    plusOneEnabled
+                      ? 'border-(--blue) bg-(--blue) text-white'
+                      : 'border-(--border) bg-transparent text-(--muted)',
+                  )}
+                >
+                  +1 {plusOneEnabled ? 'ON' : 'OFF'}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleArchive}
@@ -372,6 +418,22 @@ export default function SpurChat() {
 
       {/* Recipients strip */}
       <div className="border-b border-(--border) bg-(--surface) px-4 py-2.5">
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-(--muted)">
+            {recipients.length} {recipients.length === 1 ? 'person' : 'people'}
+          </span>
+          {canAddPlusOne && (
+            <button
+              key="userplus"
+              type="button"
+              onClick={() => setPlusOneSheetOpen(true)}
+              className="animate-pop flex cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-xs font-medium text-(--blue-light)"
+            >
+              <UserPlus size={13} />
+              Add +1
+            </button>
+          )}
+        </div>
         <div className="flex gap-3.5 overflow-x-auto">
           {recipients.map((r) => {
             const firstName = r.recipient?.name?.split(' ')[0] ?? '?'
@@ -457,13 +519,13 @@ export default function SpurChat() {
 
       {/* Messages */}
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-3">
-        {annotatedMessages.map((m, index) => (
+        {visibleMessages.map((m, index) => (
           <div
             key={m.id}
             className="flex flex-col animate-fadeUp"
             style={{ animationDelay: `${Math.min(index, 5) * 50}ms` }}
           >
-            {m.showDateSep && <DateSeparator date={m.created_at} />}
+            {m.showDateSep && m.type !== 'system' && <DateSeparator date={m.created_at} />}
             <MessageBubble
               message={m}
               isOwn={m.sender_id === user.id}
@@ -471,6 +533,7 @@ export default function SpurChat() {
               showSender={m.showSender}
               showTime={m.showTime}
               userId={m.sender_id}
+              type={m.type ?? 'text'}
             />
           </div>
         ))}
@@ -509,6 +572,15 @@ export default function SpurChat() {
             <Send size={17} />
           </button>
         </div>
+      )}
+
+      {plusOneSheetOpen && (
+        <PlusOneSheet
+          spurId={id}
+          spurRecipients={recipients}
+          currentUser={user}
+          onClose={() => setPlusOneSheetOpen(false)}
+        />
       )}
     </div>
   )
