@@ -372,9 +372,11 @@ export default function SpurChat() {
                 <button
                   key={plusOneEnabled ? 'on' : 'off'}
                   type="button"
-                  onClick={() =>
-                    supabase.from('spurs').update({ plus_one_enabled: !plusOneEnabled }).eq('id', id)
-                  }
+                  onClick={() => {
+                    const next = !plusOneEnabled
+                    setSpur((prev) => prev ? { ...prev, plus_one_enabled: next } : prev)
+                    supabase.from('spurs').update({ plus_one_enabled: next }).eq('id', id)
+                  }}
                   className={cn(
                     'animate-pop cursor-pointer rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors',
                     plusOneEnabled
