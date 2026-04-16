@@ -138,7 +138,8 @@ export default function Friends() {
     if (a?.length || b?.length) return
 
     const { error } = await supabase.from('friendships').insert({ user_id: user.id, friend_id: friendId, status: 'pending' })
-    if (!error) setFriendshipMap((prev) => ({ ...prev, [friendId]: 'pending_sent' }))
+    if (error) { console.error('[addFriend] insert error:', error.code, error.message, error.details); return }
+    setFriendshipMap((prev) => ({ ...prev, [friendId]: 'pending_sent' }))
   }
 
   async function acceptFriend(friendId) {
