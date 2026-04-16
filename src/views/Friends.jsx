@@ -100,6 +100,9 @@ export default function Friends() {
         loadPending()
         loadFriends()
       })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'friendships' }, () => {
+        loadFriends()
+      })
       .subscribe()
 
     return () => {
