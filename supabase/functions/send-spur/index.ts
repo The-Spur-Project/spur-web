@@ -1,7 +1,17 @@
 /// <reference path="./deno.d.ts" />
 import { createClient } from '@supabase/supabase-js'
 
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: CORS })
+  }
+
   const { spur_id, recipient_id } = await req.json()
 
   const supabase = createClient(
@@ -18,7 +28,7 @@ Deno.serve(async (req) => {
   if (!spur) {
     return new Response(JSON.stringify({ error: 'Spur not found' }), {
       status: 404,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...CORS, 'Content-Type': 'application/json' },
     })
   }
 
@@ -80,6 +90,6 @@ Deno.serve(async (req) => {
   }
 
   return new Response(JSON.stringify({ success: true, sent, errors }), {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...CORS, 'Content-Type': 'application/json' },
   })
 })

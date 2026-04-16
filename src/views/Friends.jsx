@@ -17,17 +17,15 @@ export default function Friends() {
   const friendshipChannelRef = useRef(null)
 
   const loadFriends = useCallback(async () => {
-    const { data: friendshipData } = await supabase
-      .from('friendships')
-      .select('user_id, friend_id')
-      .eq('status', 'accepted')
-      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+    const [{ data: sent }, { data: received }] = await Promise.all([
+      supabase.from('friendships').select('friend_id').eq('user_id', user.id).eq('status', 'accepted'),
+      supabase.from('friendships').select('user_id').eq('friend_id', user.id).eq('status', 'accepted'),
+    ])
 
-    if (!friendshipData) return
-
-    const friendIds = friendshipData.map((f) =>
-      f.user_id === user.id ? f.friend_id : f.user_id
-    )
+    const friendIds = [
+      ...(sent ?? []).map((f) => f.friend_id),
+      ...(received ?? []).map((f) => f.user_id),
+    ]
     if (!friendIds.length) { setFriends([]); return }
 
     const { data: usersData } = await supabase
@@ -170,6 +168,15 @@ export default function Friends() {
     setFriendshipMap((prev) => { const n = { ...prev }; delete n[friendId]; return n })
   }
 
+  async function removeFriend(friendId) {
+    await Promise.all([
+      supabase.from('friendships').delete().eq('user_id', user.id).eq('friend_id', friendId),
+      supabase.from('friendships').delete().eq('user_id', friendId).eq('friend_id', user.id),
+    ])
+    setFriends((prev) => prev.filter((f) => f.id !== friendId))
+    setFriendshipMap((prev) => { const n = { ...prev }; delete n[friendId]; return n })
+  }
+
   const activeFriends = activeUsers.filter((u) => friendshipMap[u.user_id] === 'accepted')
   const activeUserIds = new Set(activeUsers.map((u) => u.user_id))
 
@@ -289,6 +296,7 @@ export default function Friends() {
                 user={f}
                 friendshipStatus={friendshipMap[f.id] ?? 'accepted'}
                 onAdd={addFriend}
+                onRemove={removeFriend}
               />
               {activeUserIds.has(f.id) && (
                 <span className="pointer-events-none absolute top-4 left-[46px] h-[10px] w-[10px] rounded-full border-2 border-(--bg) bg-(--green)" />

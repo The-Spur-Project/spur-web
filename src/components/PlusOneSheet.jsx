@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import AvatarCircle from './AvatarCircle'
 import { cn } from '../lib/cn'
 
-export default function PlusOneSheet({ spurId, spurRecipients, currentUser, onClose }) {
+export default function PlusOneSheet({ spurId, spurRecipients, currentUser, isSender = false, onClose }) {
   const [friends, setFriends] = useState([])
   const [leaving, setLeaving] = useState(false)
   const [addedIds, setAddedIds] = useState(new Set())
@@ -13,6 +13,8 @@ export default function PlusOneSheet({ spurId, spurRecipients, currentUser, onCl
   const myPlusOneCount = spurRecipients.filter(
     (r) => r.invited_by_id === currentUser.id
   ).length + addedIds.size
+  const maxInvites = isSender ? Infinity : 2
+  const slotsLeft = isSender ? null : Math.max(0, 2 - myPlusOneCount)
 
   useEffect(() => {
     async function loadFriends() {
@@ -44,7 +46,7 @@ export default function PlusOneSheet({ spurId, spurRecipients, currentUser, onCl
   }, [currentUser.id, spurId])
 
   async function addPlusOne(friend) {
-    if (myPlusOneCount >= 2) return
+    if (myPlusOneCount >= maxInvites) return
 
     const { data: newRow, error } = await supabase
       .from('spur_recipients')
@@ -73,7 +75,7 @@ export default function PlusOneSheet({ spurId, spurRecipients, currentUser, onCl
     const next = new Set([...addedIds, friend.id])
     setAddedIds(next)
 
-    if (myPlusOneCount + 1 >= 2) {
+    if (!isSender && myPlusOneCount + 1 >= 2) {
       handleClose()
     }
   }
@@ -97,10 +99,12 @@ export default function PlusOneSheet({ spurId, spurRecipients, currentUser, onCl
       >
         <div className="flex items-center justify-between border-b border-(--border) px-4 py-3.5">
           <div>
-            <p className="m-0 text-[15px] font-semibold text-(--white)">Add a +1</p>
-            <p className="m-0 text-xs text-(--muted)">
-              {2 - myPlusOneCount} slot{2 - myPlusOneCount === 1 ? '' : 's'} remaining
-            </p>
+            <p className="m-0 text-[15px] font-semibold text-(--white)">Invite someone</p>
+            {slotsLeft !== null && (
+              <p className="m-0 text-xs text-(--muted)">
+                {slotsLeft} slot{slotsLeft === 1 ? '' : 's'} remaining
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -119,7 +123,7 @@ export default function PlusOneSheet({ spurId, spurRecipients, currentUser, onCl
           )}
           {friends.map((friend, index) => {
             const alreadyAdded = addedIds.has(friend.id)
-            const disabled = myPlusOneCount >= 2 && !alreadyAdded
+            const disabled = myPlusOneCount >= maxInvites && !alreadyAdded
             return (
               <div
                 key={friend.id}

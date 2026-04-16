@@ -198,11 +198,12 @@ export default function SpurChat() {
   const myPlusOneCount = recipients.filter((r) => r.invited_by_id === user?.id).length
   const canAddPlusOne = (
     plusOneEnabled &&
-    isOriginalRecipient &&
-    myRsvp === 'yes' &&
     !isExpired &&
     !isLocked &&
-    myPlusOneCount < 2
+    (
+      isSender ||
+      (isOriginalRecipient && myRsvp === 'yes' && myPlusOneCount < 2)
+    )
   )
 
   const usersMap = {}
@@ -581,6 +582,7 @@ export default function SpurChat() {
           spurId={id}
           spurRecipients={recipients}
           currentUser={user}
+          isSender={isSender}
           onClose={() => setPlusOneSheetOpen(false)}
         />
       )}

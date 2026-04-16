@@ -13,6 +13,7 @@ export default function FriendRow({
   onAdd,
   onAccept,
   onIgnore,
+  onRemove,
   selected,
   onSelect,
 }) {
@@ -53,8 +54,18 @@ export default function FriendRow({
           <span className="text-xs text-(--muted)">Pending</span>
         )}
 
-        {!onSelect && friendshipStatus === 'accepted' && (
+        {!onSelect && friendshipStatus === 'accepted' && !onRemove && (
           <span className="text-xs text-(--green)">Friends</span>
+        )}
+
+        {!onSelect && friendshipStatus === 'accepted' && onRemove && (
+          <button
+            type="button"
+            onClick={() => onRemove(user.id)}
+            className="cursor-pointer rounded-[10px] border border-(--border) bg-transparent px-3 py-[7px] text-[13px] text-(--muted) transition-transform active:scale-[0.95]"
+          >
+            Remove
+          </button>
         )}
 
         {!onSelect && friendshipStatus === 'pending_received' && (
