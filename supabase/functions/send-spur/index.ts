@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 Deno.serve(async (req) => {
-  const { spur_id } = await req.json()
+  const { spur_id, recipient_id } = await req.json()
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -22,10 +22,18 @@ Deno.serve(async (req) => {
     })
   }
 
-  const { data: recipients } = await supabase
+  // When recipient_id is provided, SMS only that one spur_recipients row (for +1 adds).
+  // Otherwise SMS all recipients — existing send-spur behavior unchanged.
+  let recipientsQuery = supabase
     .from('spur_recipients')
     .select('recipient:users!recipient_id(phone, name)')
     .eq('spur_id', spur_id)
+
+  if (recipient_id) {
+    recipientsQuery = recipientsQuery.eq('id', recipient_id)
+  }
+
+  const { data: recipients } = await recipientsQuery
 
   const baseUrl = Deno.env.get('APP_BASE_URL') ?? 'https://spur.app'
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID')!
