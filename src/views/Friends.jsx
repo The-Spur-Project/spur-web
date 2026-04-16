@@ -314,7 +314,7 @@ export default function Friends() {
                 onRemove={removeFriend}
               />
               {activeUserIds.has(f.id) && (
-                <span className="pointer-events-none absolute top-4 left-[46px] h-[10px] w-[10px] rounded-full border-2 border-(--bg) bg-(--green)" />
+                <span className="pointer-events-none absolute top-[42px] left-[26px] h-[10px] w-[10px] rounded-full border-2 border-(--bg) bg-(--green)" />
               )}
             </div>
           ))
