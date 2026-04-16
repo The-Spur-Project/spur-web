@@ -57,6 +57,7 @@ export default function SpurChat() {
   const [changingRsvp, setChangingRsvp] = useState(false)
   const messagesEndRef = useRef(null)
   const channelRef = useRef(null)
+  const isMountedRef = useRef(true)
 
   const refreshRecipients = useCallback(async () => {
     const { data } = await supabase
@@ -117,6 +118,11 @@ export default function SpurChat() {
 
     setMessages(msgs ?? [])
 
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current)
+      channelRef.current = null
+    }
+
     channelRef.current = supabase
       .channel(`spur-${id}`)
       .on('postgres_changes', {
@@ -127,10 +133,12 @@ export default function SpurChat() {
       }, (payload) => {
         setMessages((prev) => [...prev, payload.new])
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
-        if (localIsSender) {
-          supabase.from('spurs').update({ sender_unread_count: 0 }).eq('id', id)
-        } else if (localMyRow) {
-          supabase.from('spur_recipients').update({ unread_count: 0 }).eq('id', localMyRow.id)
+        if (isMountedRef.current) {
+          if (localIsSender) {
+            supabase.from('spurs').update({ sender_unread_count: 0 }).eq('id', id)
+          } else if (localMyRow) {
+            supabase.from('spur_recipients').update({ unread_count: 0 }).eq('id', localMyRow.id)
+          }
         }
       })
       .on('postgres_changes', {
@@ -161,6 +169,7 @@ export default function SpurChat() {
 
   useEffect(() => {
     return () => {
+      isMountedRef.current = false
       if (channelRef.current) supabase.removeChannel(channelRef.current)
     }
   }, [])
@@ -246,8 +255,27 @@ export default function SpurChat() {
 
   if (access === 'loading') {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-(--border) border-t-(--blue)" />
+      <div className="flex h-svh flex-1 flex-col">
+        <div className="flex items-center gap-3 border-b border-(--border) bg-(--surface) px-4 py-3.5">
+          <div className="skeleton h-5 w-5 rounded-full" />
+          <div className="flex flex-1 flex-col gap-1.5">
+            <div className="skeleton h-3.5 w-36 rounded" />
+            <div className="skeleton h-3 w-20 rounded" />
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col gap-3 px-4 py-4">
+          <div className="flex max-w-[65%] flex-col gap-1.5 self-start">
+            <div className="skeleton h-10 w-full rounded-2xl" />
+            <div className="skeleton h-10 w-3/4 rounded-2xl" />
+          </div>
+          <div className="flex max-w-[55%] flex-col gap-1.5 self-end">
+            <div className="skeleton h-10 w-full rounded-2xl" />
+          </div>
+          <div className="flex max-w-[70%] flex-col gap-1.5 self-start">
+            <div className="skeleton h-10 w-full rounded-2xl" />
+            <div className="skeleton h-10 w-1/2 rounded-2xl" />
+          </div>
+        </div>
       </div>
     )
   }
@@ -270,7 +298,7 @@ export default function SpurChat() {
   const lockedBarBase = 'border-t border-(--border) bg-(--surface) px-4 text-center text-[13px] text-(--muted) pb-[calc(14px+env(safe-area-inset-bottom))] pt-3.5'
 
   return (
-    <div className="flex h-svh flex-1 flex-col">
+    <div className="animate-slideInRight flex h-svh flex-1 flex-col">
 
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-(--border) bg-(--surface) px-4 py-3.5">
@@ -395,7 +423,7 @@ export default function SpurChat() {
 
       {/* RSVP buttons */}
       {!isSender && (myRsvp !== 'yes' && myRsvp !== 'no' && myRsvp !== 'left' || changingRsvp) && !isExpired && (
-        <div className="flex gap-2.5 border-b border-(--border) px-4 py-2.5">
+        <div className="animate-slideDown flex gap-2.5 border-b border-(--border) px-4 py-2.5">
           <button
             type="button"
             onClick={() => rsvp('yes')}
@@ -417,7 +445,7 @@ export default function SpurChat() {
           type="button"
           onClick={!isExpired ? () => setChangingRsvp(true) : undefined}
           className={cn(
-            'w-full border-b border-(--border) px-4 py-2 text-center text-[13px]',
+            'animate-pop w-full border-b border-(--border) px-4 py-2 text-center text-[13px]',
             myRsvp === 'yes' ? 'text-(--green)' : 'text-(--muted)',
             !isExpired && 'cursor-pointer',
           )}
@@ -429,8 +457,12 @@ export default function SpurChat() {
 
       {/* Messages */}
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-3">
-        {annotatedMessages.map((m) => (
-          <div key={m.id} className="flex flex-col">
+        {annotatedMessages.map((m, index) => (
+          <div
+            key={m.id}
+            className="flex flex-col animate-fadeUp"
+            style={{ animationDelay: `${Math.min(index, 5) * 50}ms` }}
+          >
             {m.showDateSep && <DateSeparator date={m.created_at} />}
             <MessageBubble
               message={m}

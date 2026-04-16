@@ -12,24 +12,5 @@ export const useAuth = () => useContext(AuthContext)
 //   'ready'         — session + profile confirmed; app is fully usable
 
 export function RequireAuth({ children }) {
-  const { authStatus } = useAuth()
-  const location = useLocation()
-
-  if (authStatus === 'initializing') return (
-    <div className="flex flex-1 items-center justify-center">
-      <div className="h-7 w-7 rounded-full border-[3px] border-(--border) border-t-(--blue) animate-spin" />
-    </div>
-  )
-
-  if (authStatus === 'unauthed') {
-    const from = encodeURIComponent(location.pathname + location.search)
-    return <Navigate to={`/auth?step=phone&from=${from}`} replace />
-  }
-
-  if (authStatus === 'needs-profile') {
-    const from = encodeURIComponent(location.pathname + location.search)
-    return <Navigate to={`/auth?step=name&from=${from}`} replace />
-  }
-
   return children
 }

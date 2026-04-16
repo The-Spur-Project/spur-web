@@ -20,20 +20,11 @@ export default function Home() {
   const channelRef = useRef(null)
 
   const fetchFriends = useCallback(async () => {
-    const { data } = await supabase
-      .from('friendships')
-      .select('user_id, friend_id, status, user:users!user_id(id,name,phone), friend:users!friend_id(id,name,phone)')
-      .eq('status', 'accepted')
-      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
-
-    if (!data) return
-    const seen = new Set()
-    const list = data
-      .map((f) => (f.user_id === user.id ? f.friend : f.user))
-      .filter(Boolean)
-      .filter((f) => { if (seen.has(f.id)) return false; seen.add(f.id); return true })
-    setFriends(list)
-  }, [user.id])
+    const query = supabase.from('users').select('id, name, phone')
+    if (user?.id) query.neq('id', user.id)
+    const { data } = await query
+    setFriends(data ?? [])
+  }, [user?.id])
 
   const fetchSpurs = useCallback(async () => {
     const { data: sentSpurs } = await supabase
@@ -93,6 +84,11 @@ export default function Home() {
     }
   }, [user, fetchFriends, fetchSpurs])
 
+  useEffect(() => {
+    const interval = setInterval(() => fetchSpurs(), 60_000)
+    return () => clearInterval(interval)
+  }, [fetchSpurs])
+
   function toggleFriend(id) {
     setSelectedFriends((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -129,18 +125,17 @@ export default function Home() {
     setSending(false)
     setSendSuccess(true)
     setTimeout(() => {
-      setSendSuccess(false)
       setMessage('')
       setSelectedFriends([])
       navigate(`/spur/${spur.id}`)
-    }, 800)
+    }, 900)
   }
 
   const canSend = message.trim() && selectedFriends.length > 0 && !sending
   const allSelected = friends.length > 0 && selectedFriends.length === friends.length
 
   return (
-    <div className="flex flex-1 flex-col pb-20">
+    <div className="flex flex-1 flex-col pb-20 animate-fadeUp">
       {/* Header */}
       <div className="px-5 pt-5">
         <h2 className="m-0 font-['Plus_Jakarta_Sans',sans-serif] text-[26px] font-extrabold text-(--white)">
@@ -232,11 +227,12 @@ export default function Home() {
             No active spurs · fire one above!
           </p>
         )}
-        {spurs.map((s) => (
+        {spurs.map((s, index) => (
           <SpurCard
             key={s.id}
             spur={s}
             currentUserId={user.id}
+            index={index}
             onClick={() => navigate(`/spur/${s.id}`)}
           />
         ))}

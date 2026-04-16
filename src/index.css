@@ -152,3 +152,46 @@ button, a {
 .animate-pulse-dot {
   animation: pulse-dot 2s ease-in-out infinite;
 }
+
+@keyframes fadeUp {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.animate-fadeUp {
+  animation: fadeUp 0.25s ease-out both;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(24px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.animate-slideInRight {
+  animation: slideInRight 0.28s ease-out both;
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 10px;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+.animate-scaleIn {
+  animation: scaleIn 0.22s ease-out both;
+}
+
+@keyframes popOut {
+  from { transform: scale(1);   opacity: 1; }
+  to   { transform: scale(0);   opacity: 0; }
+}
+.animate-popOut {
+  animation: popOut 0.15s ease-in forwards;
+}

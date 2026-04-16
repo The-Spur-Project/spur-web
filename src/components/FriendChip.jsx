@@ -1,11 +1,23 @@
+import { useState } from 'react'
 import { cn } from '../lib/cn'
 import AvatarCircle from './AvatarCircle'
 
 export default function FriendChip({ friend, selected, onToggle }) {
+  const [leaving, setLeaving] = useState(false)
   return (
     <button
       type="button"
-      onClick={() => onToggle(friend.id)}
+      onClick={() => {
+        if (selected) {
+          setLeaving(true)
+          setTimeout(() => {
+            setLeaving(false)
+            onToggle(friend.id)
+          }, 150)
+        } else {
+          onToggle(friend.id)
+        }
+      }}
       className="flex cursor-pointer flex-col items-center gap-[5px] border-none bg-transparent p-0"
     >
       <div className="relative">
@@ -17,8 +29,11 @@ export default function FriendChip({ friend, selected, onToggle }) {
         >
           <AvatarCircle name={friend.name} userId={friend.id} size="lg" />
         </div>
-        {selected && (
-          <div className="animate-pop absolute -top-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border-[2px] border-(--bg) bg-(--blue) text-[9px] font-bold text-white">
+        {(selected || leaving) && (
+          <div className={cn(
+            'absolute -top-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border-[2px] border-(--bg) bg-(--blue) text-[9px] font-bold text-white',
+            leaving ? 'animate-popOut' : 'animate-pop',
+          )}>
             ✓
           </div>
         )}

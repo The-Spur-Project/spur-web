@@ -9,7 +9,7 @@ const STATUS_COLOR = {
   left: 'var(--gray)',
 }
 
-export default function SpurCard({ spur, currentUserId, onClick }) {
+export default function SpurCard({ spur, currentUserId, onClick, index = 0 }) {
   const timeAgo = spur.created_at
     ? formatDistanceToNow(new Date(spur.created_at), { addSuffix: true })
     : ''
@@ -28,14 +28,15 @@ export default function SpurCard({ spur, currentUserId, onClick }) {
   return (
     <div
       onClick={onClick}
+      style={{ animationDelay: `${Math.min(index, 5) * 40}ms` }}
       className={cn(
-        'relative flex cursor-pointer flex-col gap-2 overflow-hidden rounded-2xl border bg-surface-gradient px-4 py-3.5 transition-transform duration-100 active:scale-[0.985]',
+        'animate-scaleIn relative flex cursor-pointer flex-col gap-2 overflow-hidden rounded-2xl border bg-surface-gradient px-4 py-3.5 transition-transform duration-100 active:scale-[0.985]',
         hasUnread ? 'border-(--border-unread)' : 'border-(--border)',
       )}
     >
       {/* Left unread accent bar */}
       {hasUnread && (
-        <div className="absolute top-0 bottom-0 left-0 w-[3px] rounded-r-full bg-(--blue)" />
+        <div className="animate-pulse-dot absolute top-0 bottom-0 left-0 w-[3px] rounded-r-full bg-(--blue)" />
       )}
 
       {/* Top row: sender name · time · unread badge */}

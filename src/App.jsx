@@ -16,42 +16,20 @@ import About from './views/About'
 import Admin from './views/Admin'
 
 function AppRoutes() {
-  const { authStatus } = useAuth()
-
-  // Show splash while Supabase resolves the initial session from localStorage
-  if (authStatus === 'initializing') return (
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 48, fontWeight: 800, color: 'var(--white)', margin: 0, letterSpacing: '-1px' }}>
-        spur<span style={{ color: 'var(--blue)' }}>.</span>
-      </h1>
-    </div>
-  )
-
-  const isAuthed = localStorage.getItem('spur_authed') === 'true'
-
   return (
     <>
       <Routes>
-        <Route
-          path="/"
-          element={isAuthed ? <Navigate to="/auth" replace /> : <PasswordGate />}
-        />
-        <Route
-          path="/auth"
-          element={authStatus === 'ready' ? <Navigate to="/home" replace /> : <Auth />}
-        />
-        <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
-        <Route path="/spur/:id" element={<RequireAuth><SpurChat /></RequireAuth>} />
-        <Route path="/friends" element={<RequireAuth><Friends /></RequireAuth>} />
-        <Route path="/history" element={<RequireAuth><History /></RequireAuth>} />
+        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/spur/:id" element={<SpurChat />} />
+        <Route path="/friends" element={<Friends />} />
+        <Route path="/history" element={<History />} />
         <Route path="/about" element={<About />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
-        <Route path="/admin" element={<RequireAuth><Admin /></RequireAuth>} />
-        <Route
-          path="*"
-          element={<Navigate to={authStatus === 'ready' ? '/home' : isAuthed ? '/auth' : '/'} replace />}
-        />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
       <NavBar />
       <PushToast />

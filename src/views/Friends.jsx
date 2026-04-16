@@ -17,23 +17,15 @@ export default function Friends() {
   const friendshipChannelRef = useRef(null)
 
   const loadFriends = useCallback(async () => {
-    const { data } = await supabase
-      .from('friendships')
-      .select('user_id, friend_id, user:users!user_id(id,name,phone), friend:users!friend_id(id,name,phone)')
-      .eq('status', 'accepted')
-      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
-
+    const query = supabase.from('users').select('id, name, phone')
+    if (user?.id) query.neq('id', user.id)
+    const { data } = await query
     if (!data) return
-    const seen = new Set()
-    const list = data
-      .map((f) => (f.user_id === user.id ? f.friend : f.user))
-      .filter(Boolean)
-      .filter((f) => { if (seen.has(f.id)) return false; seen.add(f.id); return true })
-    setFriends(list)
+    setFriends(data)
     const map = {}
-    list.forEach((f) => { map[f.id] = 'accepted' })
+    data.forEach((f) => { map[f.id] = 'accepted' })
     setFriendshipMap((prev) => ({ ...prev, ...map }))
-  }, [user.id])
+  }, [user?.id])
 
   const loadPending = useCallback(async () => {
     const { data } = await supabase
@@ -258,10 +250,10 @@ export default function Friends() {
       {/* Your friends — with online dot overlay */}
       <div className="flex flex-col gap-1 px-4 pt-4">
         <p className="m-0 mb-1.5 text-[13px] font-semibold tracking-[0.06em] text-(--muted) uppercase">
-          Your friends ({friends.length})
+          Everyone ({friends.length})
         </p>
         {friends.length === 0 ? (
-          <p className="text-sm text-(--muted)">No friends yet — search to add some!</p>
+          <p className="text-sm text-(--muted)">No users found</p>
         ) : (
           friends.map((f) => (
             <div key={f.id} className="relative">
