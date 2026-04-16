@@ -137,7 +137,7 @@ export default function Friends() {
 
     if (a?.length || b?.length) return
 
-    const { error } = await supabase.from('friendships').insert({ user_id: user.id, friend_id: friendId, status: 'pending', requester_id: user.id })
+    const { error } = await supabase.from('friendships').insert({ user_id: user.id, friend_id: friendId, status: 'pending', requester_id: user.id, addressee_id: friendId })
     if (error) { console.error('[addFriend] insert error:', error.code, error.message, error.details); return }
     setFriendshipMap((prev) => ({ ...prev, [friendId]: 'pending_sent' }))
   }
@@ -154,6 +154,7 @@ export default function Friends() {
       friend_id: friendId,
       status: 'accepted',
       requester_id: friendId,
+      addressee_id: user.id,
     }, { onConflict: 'user_id,friend_id' })
 
     setPending((prev) => prev.filter((f) => f.id !== friendId))
