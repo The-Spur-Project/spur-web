@@ -194,7 +194,7 @@ export default function SpurChat() {
   const isLocked = isExpired || myArchived || isLeft
 
   const plusOneEnabled = spur?.plus_one_enabled ?? false
-  const isOriginalRecipient = myRecipientRow != null && myRecipientRow.invited_by_id == null
+  const isRecipient = myRecipientRow != null
   const myPlusOneCount = recipients.filter((r) => r.invited_by_id === user?.id).length
   const canAddPlusOne = (
     plusOneEnabled &&
@@ -202,7 +202,7 @@ export default function SpurChat() {
     !isLocked &&
     (
       isSender ||
-      (isOriginalRecipient && myRsvp === 'yes' && myPlusOneCount < 2)
+      (isRecipient && myRsvp === 'yes' && myPlusOneCount < 2)
     )
   )
 
