@@ -130,13 +130,12 @@ export default function Friends() {
   }, [query, user.id])
 
   async function addFriend(friendId) {
-    const { data: existing } = await supabase
-      .from('friendships')
-      .select('id')
-      .or(`and(user_id.eq.${user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${user.id})`)
-      .limit(1)
+    const [{ data: a }, { data: b }] = await Promise.all([
+      supabase.from('friendships').select('id').eq('user_id', user.id).eq('friend_id', friendId).limit(1),
+      supabase.from('friendships').select('id').eq('user_id', friendId).eq('friend_id', user.id).limit(1),
+    ])
 
-    if (existing?.length) return
+    if (a?.length || b?.length) return
 
     const { error } = await supabase.from('friendships').insert({ user_id: user.id, friend_id: friendId, status: 'pending' })
     if (!error) setFriendshipMap((prev) => ({ ...prev, [friendId]: 'pending_sent' }))
