@@ -58,7 +58,7 @@ export default function Friends() {
     const senderIds = friendshipData.map((f) => f.user_id)
     const { data: usersData } = await supabase
       .from('users')
-      .select('id, name, phone')
+      .select('id, name, phone, auth_uid')
       .in('id', senderIds)
 
     if (!usersData) return
@@ -118,7 +118,7 @@ export default function Friends() {
     debounceRef.current = setTimeout(async () => {
       const { data } = await supabase
         .from('users')
-        .select('id, name, phone')
+        .select('id, name, phone, auth_uid')
         .or(`name.ilike.%${query}%,phone.ilike.%${query}%`)
         .neq('id', user.id)
         .limit(10)
@@ -137,7 +137,16 @@ export default function Friends() {
 
     if (a?.length || b?.length) return
 
-    const { error } = await supabase.from('friendships').insert({ user_id: user.id, friend_id: friendId, status: 'pending', requester_id: user.id, addressee_id: friendId })
+    const friendProfile = searchResults.find((r) => r.id === friendId)
+    const friendAuthUid = friendProfile?.auth_uid
+
+    const { error } = await supabase.from('friendships').insert({
+      user_id: user.id,
+      friend_id: friendId,
+      status: 'pending',
+      requester_id: user.auth_uid,
+      addressee_id: friendAuthUid,
+    })
     if (error) { console.error('[addFriend] insert error:', error.code, error.message, error.details); return }
     setFriendshipMap((prev) => ({ ...prev, [friendId]: 'pending_sent' }))
   }
@@ -149,12 +158,13 @@ export default function Friends() {
       .eq('user_id', friendId)
       .eq('friend_id', user.id)
 
+    const friendProfile = pending.find((p) => p.id === friendId)
     await supabase.from('friendships').upsert({
       user_id: user.id,
       friend_id: friendId,
       status: 'accepted',
-      requester_id: friendId,
-      addressee_id: user.id,
+      requester_id: friendProfile?.auth_uid ?? friendId,
+      addressee_id: user.auth_uid,
     }, { onConflict: 'user_id,friend_id' })
 
     setPending((prev) => prev.filter((f) => f.id !== friendId))

@@ -83,7 +83,7 @@ export default function PushToast() {
 
           const { data: sender } = await supabase
             .from('users')
-            .select('id, name')
+            .select('id, name, auth_uid')
             .eq('id', row.user_id)
             .single()
 
@@ -104,7 +104,7 @@ export default function PushToast() {
                     .eq('user_id', senderId)
                     .eq('friend_id', user.id)
                   await supabase.from('friendships').upsert(
-                    { user_id: user.id, friend_id: senderId, status: 'accepted', requester_id: senderId, addressee_id: user.id },
+                    { user_id: user.id, friend_id: senderId, status: 'accepted', requester_id: sender.auth_uid, addressee_id: user.auth_uid },
                     { onConflict: 'user_id,friend_id' }
                   )
                 },
