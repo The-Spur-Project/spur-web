@@ -15,12 +15,40 @@ import Terms from './views/Terms'
 import About from './views/About'
 import Admin from './views/Admin'
 
+function Splash() {
+  return (
+    <div className="flex flex-1 items-center justify-center">
+      <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 48, fontWeight: 800, color: 'var(--white)', margin: 0, letterSpacing: '-1px' }}>
+        spur<span style={{ color: 'var(--blue)' }}>.</span>
+      </h1>
+    </div>
+  )
+}
+
 function AppRoutes() {
+  const { authStatus } = useAuth()
+
+  if (authStatus === 'initializing') return <Splash />
+
+  if (authStatus === 'unauthed' || authStatus === 'needs-profile') {
+    return (
+      <>
+        <Routes>
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/about" element={<About />} />
+          <Route path="*" element={<Navigate to="/auth" replace />} />
+        </Routes>
+      </>
+    )
+  }
+
   return (
     <>
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
-        <Route path="/auth" element={<Auth />} />
+        <Route path="/auth" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<Home />} />
         <Route path="/spur/:id" element={<SpurChat />} />
         <Route path="/friends" element={<Friends />} />

@@ -10,6 +10,8 @@ export default function Home() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
+  if (!user) return null
+
   const [message, setMessage] = useState('')
   const [friends, setFriends] = useState([])
   const [selectedFriends, setSelectedFriends] = useState([])
